@@ -1,9 +1,10 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 /**
  * ==============================
- * REGISTRO
+ * REGISTRO (queda igual)
  * ==============================
  */
 exports.register = async (req, res) => {
@@ -22,11 +23,9 @@ exports.register = async (req, res) => {
 
   try {
 
-    // 1. Encriptar password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // 2.  Insertar usuario con password encriptado
     const result = await pool.query(
       'INSERT INTO usuarios (nombre, correo, password) VALUES ($1, $2, $3) RETURNING id_usuario, nombre, correo',
       [nombre, correo.toLowerCase(), passwordHash]
@@ -49,14 +48,10 @@ exports.register = async (req, res) => {
 
 /**
  * ==============================
- * LOGIN
+ * LOGIN con JWT
  * ==============================
  */
 exports.login = async (req, res) => {
-
-  if (!req.body) {
-    return res.status(400).json({ error: 'Body requerido en formato JSON' });
-  }
 
   const { correo, password } = req.body;
 
@@ -68,7 +63,6 @@ exports.login = async (req, res) => {
 
   try {
 
-    // 1. uscar usuario
     const result = await pool.query(
       'SELECT * FROM usuarios WHERE correo = $1',
       [correo.toLowerCase()]
@@ -82,7 +76,6 @@ exports.login = async (req, res) => {
 
     const usuario = result.rows[0];
 
-    // 2. Comparar password
     const passwordValido = await bcrypt.compare(password, usuario.password);
 
     if (!passwordValido) {
@@ -91,9 +84,21 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 3. Respuesta exitosa (sin password)
+    //  GENERAR TOKEN
+    const token = jwt.sign(
+      {
+        id_usuario: usuario.id_usuario,
+        correo: usuario.correo
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '2h'
+      }
+    );
+
     res.json({
       message: 'Login exitoso',
+      token,
       usuario: {
         id: usuario.id_usuario,
         nombre: usuario.nombre,
