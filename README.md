@@ -70,4 +70,9 @@ Tabla de dependencias usadas en el backend para reproducir el entorno:
 | Runtime | jsonwebtoken | ^9.0.3 | Autenticacion basada en JWT |
 | Runtime | pg | ^8.18.0 | Cliente de PostgreSQL |
 | Desarrollo | nodemon | ^3.1.14 | Reinicio automatico en cambios |
+
+---
+Universidad Politecnica de Bacalar  
+Desarrollador: Edward Daniel Allen  
+Fecha: 12 de Marzo de 2026
  
