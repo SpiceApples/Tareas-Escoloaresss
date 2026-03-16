@@ -25,6 +25,14 @@ npm run dev
 ## Scripts
 - `npm run dev`: Ejecuta el servidor en modo desarrollo con recarga automatica.
 
+## Frontend (Vite + React)
+El frontend se encuentra en `backend/frontend` y consume los endpoints del backend.
+
+Pasos:
+1. Configura la variable `VITE_API_BASE_URL` si tu backend no corre en `http://localhost:3000`.
+2. Ejecuta `npm install` dentro de `backend/frontend`.
+3. Ejecuta `npm run dev` dentro de `backend/frontend`.
+
 ## Endpoints
 Tabla con los endpoints disponibles en el backend:
 
