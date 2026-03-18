@@ -23,12 +23,16 @@ const PORT = process.env.PORT || 3000;
 async function startServer() {
   try {
     // Inicializar base de datos si es necesario
-    console.log('Verificando base de datos...');
-    const sqlPath = path.join(__dirname, '../db_schema.sql');
-    if (fs.existsSync(sqlPath)) {
-      const sql = fs.readFileSync(sqlPath, 'utf8');
-      await pool.query(sql);
-      console.log('✅ Base de datos verificada/inicializada.');
+    try {
+      console.log('Verificando base de datos...');
+      const sqlPath = path.join(__dirname, '../db_schema.sql');
+      if (fs.existsSync(sqlPath)) {
+        const sql = fs.readFileSync(sqlPath, 'utf8');
+        await pool.query(sql);
+        console.log('✅ Base de datos verificada/inicializada.');
+      }
+    } catch (dbError) {
+      console.error('⚠️ Advertencia: Error en inicialización de DB, pero el servidor intentará arrancar:', dbError.message);
     }
     
     app.listen(PORT, () => {
