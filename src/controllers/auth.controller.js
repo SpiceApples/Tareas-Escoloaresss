@@ -5,7 +5,8 @@ const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const CLIENT_ID = '811564986134-8rgc04t2r94tcrulo4gm167cr2u32s07.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(CLIENT_ID);
 
 /**
  * ==============================
@@ -131,7 +132,7 @@ exports.googleLogin = async (req, res) => {
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: CLIENT_ID,
     });
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
