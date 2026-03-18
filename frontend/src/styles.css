@@ -1245,80 +1245,149 @@ body, .sidebar, .card, .summary-card, .auth-card, .auth-aside, .user-card, .cale
    ============================== */
 @media screen and (max-width: 768px) {
   .app {
-    padding: 16px;
+    padding: 16px 16px 100px 16px; /* Extra bottom padding for fixed nav */
   }
 
   .shell {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 20px;
   }
 
+  /* Hide sidebar branding on mobile, use topbar instead */
+  .sidebar .brand,
+  .sidebar .user-card {
+    display: none;
+  }
+
+  /* Turn sidebar into a bottom navigation bar */
   .sidebar {
-    position: relative;
-    top: 0;
-    padding: 20px 16px;
-    margin-bottom: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .brand, .user-card {
-    text-align: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    margin-bottom: 16px;
+    z-index: 1000;
+    padding: 8px;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    background: var(--bg-alt);
+    border-top: 1px solid var(--stroke);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 4px;
+    height: auto;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
   }
 
   .nav {
+    display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
     width: 100%;
+    justify-content: space-around;
+    gap: 2px;
   }
 
   .nav-button {
-    flex: 1 1 calc(33% - 8px);
-    text-align: center;
-    padding: 12px 6px;
-    font-size: 0.85rem;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 8px 2px;
+    font-size: 0.65rem;
+    text-align: center;
+    border-radius: 12px;
   }
 
   .nav-icon {
-    margin: 0 0 6px 0;
+    margin: 0 0 4px 0;
     font-size: 1.4rem;
   }
 
-  .auth-container {
-    padding: 16px;
+  /* Style the install and share buttons as small pills at the top of the main area instead */
+  .button-install {
+    position: static;
+    display: inline-flex;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    margin: 4px;
+    flex: 0 0 auto;
+  }
+
+  .sidebar > .button-install, 
+  .sidebar > .nav-button.ghost {
+    display: flex;
+    flex-direction: row;
+    width: auto;
+    font-size: 0.75rem;
+    padding: 8px 12px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  /* Main Topbar adjustments */
+  .mobile-brand {
+    display: flex;
+  }
+
+  .topbar {
+    flex-direction: column;
     align-items: flex-start;
-    padding-top: 5vh;
+    gap: 16px;
+    background: var(--surface);
+    padding: 16px;
+    border-radius: var(--radius);
   }
 
-  .auth-card-evernote {
+  .period-selector {
     width: 100%;
-    padding: 32px 24px;
-    margin: 0;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
+  /* Calendar grids specifically */
+  .calendar {
+    width: 100%;
+  }
+  .calendar-header {
+    gap: 2px;
+  }
+  .calendar-header span {
+    font-size: 0.7rem;
+    padding: 8px 0;
+  }
+  .calendar-grid {
+    gap: 2px;
+  }
+  .calendar-day {
+    min-height: 60px;
+    padding: 4px;
+  }
+  .calendar-day-date {
+    font-size: 0.8rem;
+  }
+  .calendar-task-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Tables & Lists */
   .table-wrapper, 
-  table {
+  table, 
+  .list {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+    width: 100%;
   }
 
-  .form-group input, 
-  .form-group select, 
-  .form-group textarea {
-    font-size: 16px;
+  .grid, .grid-2, .cards-grid {
+    grid-template-columns: 1fr !important;
   }
 
-  .grid-2 {
+  .form.inline {
     grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
