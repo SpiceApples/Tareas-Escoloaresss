@@ -8,8 +8,15 @@ const pool = require('./config/db');
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Diagnostic
+app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
 // Rutas
 app.use('/api/auth', require('./routes/auth.routes'));
