@@ -9,13 +9,9 @@
   "main": "index.js",
   
   "scripts": {
-  
-    
-  "test": "echo \"Error: no test specified\" && exit 1",
-  
-    
-  "dev": "nodemon src/app.js"
-  
+    "start": "node src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/app.js"
   },
   
   "keywords": [],
@@ -41,7 +37,13 @@
   "express": "^5.2.1",
   
     
+  "google-auth-library": "^10.6.2",
+  
+    
   "jsonwebtoken": "^9.0.3",
+  
+    
+  "nodemailer": "^8.0.3",
   
     
   "pg": "^8.18.0"

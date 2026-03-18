@@ -6,7 +6,7 @@ const pool = require('../config/db');
  * ==============================
  */
 exports.crearHorario = async (req, res) => {
-  const { dia_semana, hora_inicio, hora_fin, id_materia } = req.body;
+  const { dia_semana, hora_inicio, hora_fin, id_materia, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   if (!dia_semana || !hora_inicio || !hora_fin || !id_materia) {
@@ -28,10 +28,10 @@ exports.crearHorario = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO horarios (dia_semana, hora_inicio, hora_fin, id_materia)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO horarios (dia_semana, hora_inicio, hora_fin, id_materia, color)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [dia_semana, hora_inicio, hora_fin, id_materia]
+      [dia_semana, hora_inicio, hora_fin, id_materia, color]
     );
 
     res.status(201).json(result.rows[0]);
@@ -53,7 +53,7 @@ exports.obtenerHorariosPorMateria = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT h.*
+      `SELECT h.*, m.color AS materia_color
        FROM horarios h
        JOIN materias m ON h.id_materia = m.id_materia
        JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -80,7 +80,7 @@ exports.obtenerHorarioCompleto = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT h.*, m.nombre AS materia, p.nombre AS periodo
+      `SELECT h.*, m.nombre AS materia, m.color AS materia_color, p.nombre AS periodo
        FROM horarios h
        JOIN materias m ON h.id_materia = m.id_materia
        JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -104,7 +104,7 @@ exports.obtenerHorarioCompleto = async (req, res) => {
  */
 exports.actualizarHorario = async (req, res) => {
   const { id } = req.params;
-  const { dia_semana, hora_inicio, hora_fin } = req.body;
+  const { dia_semana, hora_inicio, hora_fin, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   try {
@@ -112,14 +112,15 @@ exports.actualizarHorario = async (req, res) => {
       `UPDATE horarios h
        SET dia_semana = $1,
            hora_inicio = $2,
-           hora_fin = $3
+           hora_fin = $3,
+           color = $4
        FROM materias m
        JOIN periodos p ON m.id_periodo = p.id_periodo
-       WHERE h.id_horario = $4
+       WHERE h.id_horario = $5
          AND h.id_materia = m.id_materia
-         AND p.id_usuario = $5
+         AND p.id_usuario = $6
        RETURNING h.*`,
-      [dia_semana, hora_inicio, hora_fin, id, id_usuario]
+      [dia_semana, hora_inicio, hora_fin, color, id, id_usuario]
     );
 
     if (result.rows.length === 0) {

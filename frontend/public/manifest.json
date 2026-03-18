@@ -1,0 +1,17 @@
+{
+  "name": "Tareas Escolares",
+  "short_name": "Tareas",
+  "description": "Organizador de tareas, materias y horarios para estudiantes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

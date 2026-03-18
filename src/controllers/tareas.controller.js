@@ -6,7 +6,7 @@ const pool = require('../config/db');
  * ==============================
  */
 exports.crearTarea = async (req, res) => {
-  const { titulo, descripcion, fecha_entrega, id_materia } = req.body;
+  const { titulo, descripcion, fecha_entrega, hora_entrega, id_materia, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   if (!titulo || !fecha_entrega || !id_materia) {
@@ -28,10 +28,10 @@ exports.crearTarea = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO tareas (titulo, descripcion, fecha_entrega, id_materia)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO tareas (titulo, descripcion, fecha_entrega, hora_entrega, id_materia, color)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [titulo, descripcion, fecha_entrega, id_materia]
+      [titulo, descripcion, fecha_entrega, hora_entrega, id_materia, color]
     );
 
     res.status(201).json(result.rows[0]);
@@ -52,7 +52,7 @@ exports.obtenerTodasLasTareas = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT t.*, m.nombre AS materia
+      `SELECT t.*, m.nombre AS materia, m.color AS materia_color
        FROM tareas t
        JOIN materias m ON t.id_materia = m.id_materia
        JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -113,7 +113,7 @@ exports.obtenerTareaPorId = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT t.*, m.nombre AS materia
+      `SELECT t.*, m.nombre AS materia, m.color AS materia_color
        FROM tareas t
        JOIN materias m ON t.id_materia = m.id_materia
        JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -140,7 +140,7 @@ exports.obtenerTareaPorId = async (req, res) => {
  */
 exports.actualizarTarea = async (req, res) => {
   const { id } = req.params;
-  const { titulo, descripcion, fecha_entrega } = req.body;
+  const { titulo, descripcion, fecha_entrega, hora_entrega, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   try {
@@ -148,14 +148,16 @@ exports.actualizarTarea = async (req, res) => {
       `UPDATE tareas t
        SET titulo = $1,
            descripcion = $2,
-           fecha_entrega = $3
+           fecha_entrega = $3,
+           hora_entrega = $4,
+           color = $5
        FROM materias m
        JOIN periodos p ON m.id_periodo = p.id_periodo
-       WHERE t.id_tarea = $4
+       WHERE t.id_tarea = $6
          AND t.id_materia = m.id_materia
-         AND p.id_usuario = $5
+         AND p.id_usuario = $7
        RETURNING t.*`,
-      [titulo, descripcion, fecha_entrega, id, id_usuario]
+      [titulo, descripcion, fecha_entrega, hora_entrega, color, id, id_usuario]
     );
 
     if (result.rows.length === 0) {
@@ -211,7 +213,7 @@ exports.eliminarTarea = async (req, res) => {
   const id_usuario = req.usuario.id_usuario;
 
   const result = await pool.query(
-    `SELECT t.*, m.nombre AS materia
+    `SELECT t.*, m.nombre AS materia, m.color AS materia_color
      FROM tareas t
      JOIN materias m ON t.id_materia = m.id_materia
      JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -235,7 +237,7 @@ exports.eliminarTarea = async (req, res) => {
   const id_usuario = req.usuario.id_usuario;
 
   const result = await pool.query(
-    `SELECT t.*, m.nombre AS materia
+    `SELECT t.*, m.nombre AS materia, m.color AS materia_color
      FROM tareas t
      JOIN materias m ON t.id_materia = m.id_materia
      JOIN periodos p ON m.id_periodo = p.id_periodo
@@ -260,7 +262,7 @@ exports.eliminarTarea = async (req, res) => {
   const id_usuario = req.usuario.id_usuario;
 
   const result = await pool.query(
-    `SELECT t.*, m.nombre AS materia
+    `SELECT t.*, m.nombre AS materia, m.color AS materia_color
      FROM tareas t
      JOIN materias m ON t.id_materia = m.id_materia
      JOIN periodos p ON m.id_periodo = p.id_periodo

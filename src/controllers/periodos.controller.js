@@ -6,7 +6,7 @@ const pool = require('../config/db');
  * ==============================
  */
 exports.crearPeriodo = async (req, res) => {
-  const { nombre, fecha_inicio, fecha_fin } = req.body;
+  const { nombre, fecha_inicio, fecha_fin, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   if (!nombre || !fecha_inicio || !fecha_fin) {
@@ -17,10 +17,10 @@ exports.crearPeriodo = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO periodos (nombre, fecha_inicio, fecha_fin, id_usuario)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO periodos (nombre, fecha_inicio, fecha_fin, id_usuario, color)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [nombre, fecha_inicio, fecha_fin, id_usuario]
+      [nombre, fecha_inicio, fecha_fin, id_usuario, color]
     );
 
     res.status(201).json(result.rows[0]);
@@ -92,7 +92,7 @@ exports.obtenerPeriodoPorId = async (req, res) => {
  */
 exports.actualizarPeriodo = async (req, res) => {
   const { id } = req.params;
-  const { nombre, fecha_inicio, fecha_fin } = req.body;
+  const { nombre, fecha_inicio, fecha_fin, color } = req.body;
   const id_usuario = req.usuario.id_usuario;
 
   try {
@@ -100,10 +100,11 @@ exports.actualizarPeriodo = async (req, res) => {
       `UPDATE periodos
        SET nombre = $1,
            fecha_inicio = $2,
-           fecha_fin = $3
-       WHERE id_periodo = $4 AND id_usuario = $5
+           fecha_fin = $3,
+           color = $4
+       WHERE id_periodo = $5 AND id_usuario = $6
        RETURNING *`,
-      [nombre, fecha_inicio, fecha_fin, id, id_usuario]
+      [nombre, fecha_inicio, fecha_fin, color, id, id_usuario]
     );
 
     if (result.rows.length === 0) {

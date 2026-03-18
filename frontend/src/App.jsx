@@ -1,6 +1,7 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '811564986134-8rgc04t2r94tcrulo4gm167cr2u32s07.apps.googleusercontent.com';
 const DAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 const SCHOOL_DAYS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie'];
 const MATERIA_COLORS = [
@@ -56,7 +57,8 @@ const startOfToday = () => {
   return now;
 };
 
-const getMateriaColor = (idMateria) => {
+const getMateriaColor = (idMateria, customColor) => {
+  if (customColor) return customColor;
   const index = Math.abs(Number(idMateria || 0)) % MATERIA_COLORS.length;
   return MATERIA_COLORS[index];
 };
@@ -105,11 +107,11 @@ const request = async (path, { method = 'GET', body, token } = {}) => {
 const emptyNotice = { type: '', message: '' };
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Resumen' },
-  { id: 'periodos', label: 'Periodos' },
-  { id: 'materias', label: 'Materias' },
-  { id: 'tareas', label: 'Tareas' },
-  { id: 'horarios', label: 'Horario' }
+  { id: 'dashboard', label: 'Resumen', icon: '📊' },
+  { id: 'periodos', label: 'Periodos', icon: '🗓️' },
+  { id: 'materias', label: 'Materias', icon: '📚' },
+  { id: 'tareas', label: 'Tareas', icon: '📝' },
+  { id: 'horarios', label: 'Horario', icon: '⏰' }
 ];
 
 const buildTaskStatus = (task) => {
@@ -137,26 +139,31 @@ const initTaskForm = {
   titulo: '',
   descripcion: '',
   fecha_entrega: '',
-  id_materia: ''
+  hora_entrega: '',
+  id_materia: '',
+  color: ''
 };
 
 const initPeriodoForm = {
   nombre: '',
   fecha_inicio: '',
-  fecha_fin: ''
+  fecha_fin: '',
+  color: ''
 };
 
 const initMateriaForm = {
   nombre: '',
   profesor: '',
-  id_periodo: ''
+  id_periodo: '',
+  color: ''
 };
 
 const initHorarioForm = {
   dia_semana: 'Lun',
   hora_inicio: '07:00',
   hora_fin: '08:30',
-  id_materia: ''
+  id_materia: '',
+  color: ''
 };
 
 const isSameDay = (date, other) =>
@@ -164,11 +171,36 @@ const isSameDay = (date, other) =>
   date.getMonth() === other.getMonth() &&
   date.getDate() === other.getDate();
 
+function Logo({ size = 40 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="logoGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#9333ea" />
+          <stop offset="1" stopColor="#7c3aed" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="128" fill="url(#logoGradient)" />
+      <path
+        d="M150 260L220 330L362 188"
+        stroke="white"
+        strokeWidth="60"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem('te_token') || '');
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('te_user');
     return stored ? JSON.parse(stored) : null;
+  });
+  const [resetToken, setResetToken] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token') || '';
   });
   const [view, setView] = useState('dashboard');
   const [periodos, setPeriodos] = useState([]);
@@ -180,6 +212,34 @@ export default function App() {
   const [notice, setNotice] = useState(emptyNotice);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('te_theme') || 'dark');
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setInstallPrompt(null);
+      }
+    } else {
+      alert('Para instalar:\n\nEn Android/Chrome: Toca los tres puntos (⋮) y selecciona "Instalar aplicación".\n\nEn iOS/Safari: Toca el botón compartir (📤) y selecciona "Agregar a la pantalla de inicio".');
+    }
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('te_theme', theme);
+  }, [theme]);
 
   const materiasById = useMemo(
     () => new Map(materias.map((materia) => [materia.id_materia, materia])),
@@ -309,6 +369,58 @@ export default function App() {
       localStorage.setItem('te_token', data.token);
       localStorage.setItem('te_user', JSON.stringify(data.usuario));
       showNotice('success', 'Cuenta creada e iniciada.');
+    } catch (error) {
+      showNotice('danger', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async (idToken) => {
+    setIsLoading(true);
+    setNotice(emptyNotice);
+    try {
+      const data = await request('/api/auth/google-login', {
+        method: 'POST',
+        body: { idToken }
+      });
+      setToken(data.token);
+      setUser(data.usuario);
+      localStorage.setItem('te_token', data.token);
+      localStorage.setItem('te_user', JSON.stringify(data.usuario));
+      showNotice('success', 'Bienvenido con Google.');
+    } catch (error) {
+      showNotice('danger', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (correo) => {
+    setIsLoading(true);
+    try {
+      const data = await request('/api/auth/forgot-password', {
+        method: 'POST',
+        body: { correo }
+      });
+      showNotice('success', data.message);
+    } catch (error) {
+      showNotice('danger', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (tokenParam, newPassword) => {
+    setIsLoading(true);
+    try {
+      const data = await request('/api/auth/reset-password', {
+        method: 'POST',
+        body: { token: tokenParam, newPassword }
+      });
+      showNotice('success', data.message);
+      setResetToken(''); // Limpiar token para volver al login
+      window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       showNotice('danger', error.message);
     } finally {
@@ -469,7 +581,19 @@ export default function App() {
   if (!token) {
     return (
       <div className="app auth">
-        <AuthPanel onLogin={handleLogin} onRegister={handleRegister} loading={isLoading} notice={notice} />
+        <AuthPanel
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onGoogleLogin={handleGoogleLogin}
+          onForgotPassword={handleForgotPassword}
+          onResetPassword={handleResetPassword}
+          resetToken={resetToken}
+          setResetToken={setResetToken}
+          loading={isLoading}
+          notice={notice}
+          theme={theme}
+          setTheme={setTheme}
+        />
       </div>
     );
   }
@@ -479,8 +603,11 @@ export default function App() {
       <div className="shell">
         <aside className="sidebar">
           <div className="brand">
-            <span className="brand-kicker">Tareas</span>
-            <h1>Escolares</h1>
+            <Logo size={42} />
+            <div className="brand-text">
+              <span className="brand-kicker">Tareas</span>
+              <h1>Escolares</h1>
+            </div>
           </div>
           <div className="user-card">
             <p className="user-name">{user?.nombre || 'Alumno'}</p>
@@ -494,7 +621,8 @@ export default function App() {
                 className={`nav-button ${view === item.id ? 'active' : ''}`}
                 onClick={() => setView(item.id)}
               >
-                {item.label}
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
               </button>
             ))}
           </nav>
@@ -502,15 +630,61 @@ export default function App() {
           >
             Cerrar sesión
           </button>
+          
+          {!window.matchMedia('(display-mode: standalone)').matches && (
+            <button
+              type="button"
+              className={`button-install ${!installPrompt ? 'info' : ''}`}
+              onClick={handleInstall}
+            >
+              <span className="nav-icon">{installPrompt ? '📲' : 'ℹ️'}</span>
+              <span className="nav-label">
+                {installPrompt ? 'Instalar App' : '¿Cómo instalar?'}
+              </span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="button-install info"
+            style={{ marginTop: '8px' }}
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert('¡Enlace copiado al portapapeles!');
+            }}
+          >
+            <span className="nav-icon">🔗</span>
+            <span className="nav-label">Compartir link</span>
+          </button>
         </aside>
 
         <main className="main">
           <header className="topbar">
+            <div className="mobile-brand">
+              <Logo size={32} />
+              <div className="brand-text">
+                <span className="brand-kicker">Tareas</span>
+                <h1>Escolares</h1>
+              </div>
+            </div>
             <div>
               <p className="eyebrow">Panel de seguimiento</p>
               <h2>Hola {user?.nombre?.split(' ')[0] || 'de nuevo'}</h2>
             </div>
             <div className="period-selector">
+              <button
+                type="button"
+                className="theme-toggle"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                aria-label="Toggle theme"
+              >
+                <div className="theme-toggle-track">
+                  <div className="theme-toggle-thumb">
+                    {theme === 'dark' ? '🌙' : '☀️'}
+                  </div>
+                </div>
+              </button>
               <label>
                 Periodo actual
                 <select
@@ -596,29 +770,88 @@ export default function App() {
   );
 }
 
-function AuthPanel({ onLogin, onRegister, loading, notice }) {
-  const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ nombre: '', correo: '', password: '' });
+function AuthPanel({
+  onLogin, onRegister, onGoogleLogin, onForgotPassword, onResetPassword,
+  resetToken, setResetToken, loading, notice, theme, setTheme
+}) {
+  const [mode, setMode] = useState(resetToken ? 'reset' : 'login');
+  const [form, setForm] = useState({ nombre: '', correo: '', password: '', confirmPassword: '' });
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          onGoogleLogin(response.credential);
+        }
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-btn'),
+        { theme: theme === 'dark' ? 'filled_blue' : 'outline', size: 'large', width: '100%' }
+      );
+    }
+  }, [mode, theme]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     if (mode === 'login') {
       onLogin({ correo: form.correo, password: form.password });
-    } else {
+    } else if (mode === 'register') {
       onRegister(form);
+    } else if (mode === 'forgot') {
+      onForgotPassword(form.correo);
+    } else if (mode === 'reset') {
+      if (form.password !== form.confirmPassword) {
+        alert('Las contraseñas no coinciden.');
+        return;
+      }
+      onResetPassword(resetToken, form.password);
     }
   };
 
   return (
-    <div className="auth-panel">
-      <div className="auth-card">
-        <div>
-          <p className="eyebrow">Organiza tus clases</p>
-          <h1>Tareas Escolares</h1>
-          <p className="muted">
-            Inicia sesión para registrar periodos, materias, tareas y horarios. Todo se sincroniza con tu backend.
+    <div className="auth-container">
+      <div className="auth-theme-switcher">
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          aria-label="Toggle theme"
+        >
+          <div className="theme-toggle-track">
+            <div className="theme-toggle-thumb">
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </div>
+          </div>
+        </button>
+      </div>
+      <div className="auth-card-evernote">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <Logo size={64} />
+          </div>
+          <h1>
+            {mode === 'login' && 'Tareas Escolares'}
+            {mode === 'register' && 'Crear Cuenta'}
+            {mode === 'forgot' && 'Recuperar Cuenta'}
+            {mode === 'reset' && 'Nueva Contraseña'}
+          </h1>
+          <p className="auth-subtitle">
+            {mode === 'forgot' ? 'Te enviaremos un enlace a tu correo.' : 'Organiza todo lo importante.'}
           </p>
         </div>
+
+        {(mode === 'login' || mode === 'register') && (
+          <>
+            <div className="auth-social">
+              <div id="google-btn"></div>
+            </div>
+            <div className="auth-divider">
+              <span>o</span>
+            </div>
+          </>
+        )}
 
         {notice?.message ? (
           <div className={`notice ${notice.type}`}>
@@ -626,76 +859,77 @@ function AuthPanel({ onLogin, onRegister, loading, notice }) {
           </div>
         ) : null}
 
-        <form className="form" onSubmit={handleSubmit}>
-          <div className="segmented">
-            <button
-              type="button"
-              className={mode === 'login' ? 'active' : ''}
-              onClick={() => setMode('login')}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              className={mode === 'register' ? 'active' : ''}
-              onClick={() => setMode('register')}
-            >
-              Registro
-            </button>
-          </div>
+        <form className="auth-form-evernote" onSubmit={handleSubmit}>
+          {mode === 'register' && (
+            <input
+              type="text"
+              placeholder="Nombre completo"
+              value={form.nombre}
+              onChange={(event) => setForm({ ...form, nombre: event.target.value })}
+              required
+            />
+          )}
 
-          {mode === 'register' ? (
-            <label>
-              Nombre completo
-              <input
-                type="text"
-                placeholder="Tu nombre"
-                value={form.nombre}
-                onChange={(event) => setForm({ ...form, nombre: event.target.value })}
-                required
-              />
-            </label>
-          ) : null}
-
-          <label>
-            Correo institucional
+          {(mode !== 'reset') && (
             <input
               type="email"
-              placeholder="alumno@universidad.edu"
+              placeholder="Correo electrónico"
               value={form.correo}
               onChange={(event) => setForm({ ...form, correo: event.target.value })}
               required
             />
-          </label>
+          )}
 
-          <label>
-            Contraseña
+          {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <input
               type="password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder={mode === 'reset' ? 'Nueva contraseña' : 'Contraseña'}
               value={form.password}
               onChange={(event) => setForm({ ...form, password: event.target.value })}
               required
             />
-          </label>
+          )}
 
-          <button type="submit" className="button primary" disabled={loading}>
-            {loading ? 'Procesando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+          {mode === 'reset' && (
+            <input
+              type="password"
+              placeholder="Confirmar contraseña"
+              value={form.confirmPassword}
+              onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
+              required
+            />
+          )}
+
+          <button type="submit" className="button-evernote-primary" disabled={loading}>
+            {loading ? 'Procesando…' :
+              mode === 'login' ? 'Iniciar sesión' :
+              mode === 'register' ? 'Crear cuenta' :
+              mode === 'forgot' ? 'Enviar enlace' : 'Actualizar contraseña'}
           </button>
         </form>
-      </div>
-      <div className="auth-aside">
-        <div>
-          <h2>Todo tu semestre, en un solo lugar.</h2>
-          <p>
-            Controla tus tareas pendientes, planea entregas, revisa tu calendario y consulta tu horario semanal con
-            colores por materia.
-          </p>
-          <ul className="features">
-            <li>Calendario con tareas pendientes y completadas.</li>
-            <li>CRUD completo de periodos, materias, tareas y horarios.</li>
-            <li>Vista semanal de horario categorizada por color.</li>
-          </ul>
+
+        <div className="auth-footer">
+          {mode === 'login' && (
+            <>
+              <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot'); }}>¿Olvidaste tu contraseña?</a>
+              <p>¿No tienes una cuenta?</p>
+              <button type="button" className="link-button" onClick={() => setMode('register')}>
+                Crear cuenta
+              </button>
+            </>
+          )}
+          {(mode === 'register' || mode === 'forgot' || mode === 'reset') && (
+            <>
+              <p>{mode === 'register' ? '¿Ya tienes una cuenta?' : '¿Recordaste tu contraseña?'}</p>
+              <button type="button" className="link-button" onClick={() => {
+                setMode('login');
+                setResetToken('');
+                window.history.replaceState({}, document.title, window.location.pathname);
+              }}>
+                Iniciar sesión
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -770,6 +1004,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
                       key={tarea.id_tarea}
                       type="button"
                       className="list-item"
+                      style={{ borderLeft: `4px solid ${tarea.color || getMateriaColor(tarea.id_materia, tarea.materia_color)}` }}
                       onClick={() => onSelectTask(tarea)}
                     >
                       <div>
@@ -845,6 +1080,14 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
               required
             />
           </label>
+          <label>
+            Color
+            <input
+              type="color"
+              value={form.color || '#7c3aed'}
+              onChange={(event) => setForm({ ...form, color: event.target.value })}
+            />
+          </label>
           <div className="actions">
             <button type="submit" className="button primary">
               {editingId ? 'Guardar cambios' : 'Crear periodo'}
@@ -868,7 +1111,11 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
             <EmptyState message="Aún no tienes periodos registrados." />
           ) : (
             periodos.map((periodo) => (
-              <div key={periodo.id_periodo} className="table-row">
+              <div
+                key={periodo.id_periodo}
+                className="table-row"
+                style={{ borderLeft: `4px solid ${periodo.color || '#7c3aed'}` }}
+              >
                 <div>
                   <p className="strong">{periodo.nombre}</p>
                   <p className="muted">
@@ -881,7 +1128,8 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
                     setForm({
                       nombre: periodo.nombre,
                       fecha_inicio: periodo.fecha_inicio,
-                      fecha_fin: periodo.fecha_fin
+                      fecha_fin: periodo.fecha_fin,
+                      color: periodo.color || ''
                     });
                   }}>
                     Editar
@@ -959,6 +1207,14 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
               ))}
             </select>
           </label>
+          <label>
+            Color
+            <input
+              type="color"
+              value={form.color || '#7c3aed'}
+              onChange={(event) => setForm({ ...form, color: event.target.value })}
+            />
+          </label>
           <div className="actions">
             <button type="submit" className="button primary">
               {editingId ? 'Guardar cambios' : 'Crear materia'}
@@ -982,7 +1238,11 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
             <EmptyState message="Aún no hay materias en este periodo." />
           ) : (
             materias.map((materia) => (
-              <div key={materia.id_materia} className="table-row">
+              <div
+                key={materia.id_materia}
+                className="table-row"
+                style={{ borderLeft: `4px solid ${materia.color || getMateriaColor(materia.id_materia)}` }}
+              >
                 <div>
                   <p className="strong">{materia.nombre}</p>
                   <p className="muted">{materia.profesor || 'Sin profesor asignado'}</p>
@@ -993,7 +1253,8 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
                     setForm({
                       nombre: materia.nombre,
                       profesor: materia.profesor || '',
-                      id_periodo: materia.id_periodo
+                      id_periodo: materia.id_periodo,
+                      color: materia.color || ''
                     });
                   }}>
                     Editar
@@ -1089,6 +1350,22 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
                 required
               />
             </label>
+            <label>
+              Hora de entrega
+              <input
+                type="time"
+                value={form.hora_entrega || ''}
+                onChange={(event) => setForm({ ...form, hora_entrega: event.target.value })}
+              />
+            </label>
+            <label>
+              Color
+              <input
+                type="color"
+                value={form.color || '#7c3aed'}
+                onChange={(event) => setForm({ ...form, color: event.target.value })}
+              />
+            </label>
           </div>
           <label>
             Descripción
@@ -1143,12 +1420,21 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
             filtered.map((tarea) => {
               const status = buildTaskStatus(tarea);
               return (
-                <div key={tarea.id_tarea} className="table-row">
+                <div
+                  key={tarea.id_tarea}
+                  className="table-row"
+                  style={{ borderLeft: `4px solid ${tarea.color || getMateriaColor(tarea.id_materia, tarea.materia_color)}` }}
+                >
                   <div>
                     <p className="strong">{tarea.titulo}</p>
-                    <p className="muted">{formatDate(tarea.fecha_entrega)}</p>
+                    <p className="muted">
+                      {formatDate(tarea.fecha_entrega)} 
+                      {tarea.hora_entrega ? ` · ${formatTime(tarea.hora_entrega)}` : ''}
+                    </p>
                     <div className="meta">
-                      <span className="chip subtle">{tarea.materia || 'Materia'}</span>
+                      <span className="chip subtle" style={{ background: `${tarea.materia_color}22`, color: tarea.materia_color }}>
+                        {tarea.materia || 'Materia'}
+                      </span>
                       <span className={`chip ${status.tone}`}>{status.label}</span>
                     </div>
                   </div>
@@ -1167,7 +1453,9 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
                         titulo: tarea.titulo,
                         descripcion: tarea.descripcion || '',
                         fecha_entrega: tarea.fecha_entrega,
-                        id_materia: tarea.id_materia
+                        hora_entrega: tarea.hora_entrega || '',
+                        id_materia: tarea.id_materia,
+                        color: tarea.color || ''
                       });
                     }}>
                       Editar
@@ -1259,6 +1547,14 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
               required
             />
           </label>
+          <label>
+            Color
+            <input
+              type="color"
+              value={form.color || '#7c3aed'}
+              onChange={(event) => setForm({ ...form, color: event.target.value })}
+            />
+          </label>
           <div className="actions">
             <button type="submit" className="button primary">
               {editingId ? 'Guardar cambios' : 'Crear horario'}
@@ -1306,7 +1602,8 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
                       dia_semana: horario.dia_semana,
                       hora_inicio: formatTime(horario.hora_inicio),
                       hora_fin: formatTime(horario.hora_fin),
-                      id_materia: horario.id_materia
+                      id_materia: horario.id_materia,
+                      color: horario.color || ''
                     });
                   }}>
                     Editar
@@ -1366,6 +1663,7 @@ function Calendar({ date, tasks, onSelectTask }) {
                       key={task.id_tarea}
                       type="button"
                       className={`task-pill ${status.tone}`}
+                      style={{ background: task.color || getMateriaColor(task.id_materia, task.materia_color) }}
                       onClick={() => onSelectTask(task)}
                     >
                       {task.titulo}
@@ -1414,21 +1712,21 @@ function ScheduleGrid({ horarios, materias }) {
               {horarios
                 .filter((horario) => horario.dia_semana === day)
                 .map((horario) => {
-                  const start = Math.max(toMinutes(horario.hora_inicio), scheduleStart);
-                  const end = Math.min(toMinutes(horario.hora_fin), scheduleEnd);
-                  const materia = materiasById.get(horario.id_materia);
-                  const color = getMateriaColor(horario.id_materia);
+                    const start = Math.max(toMinutes(horario.hora_inicio), scheduleStart);
+                    const end = Math.min(toMinutes(horario.hora_fin), scheduleEnd);
+                    const materia = materiasById.get(horario.id_materia);
+                    const color = horario.color || getMateriaColor(horario.id_materia, materia?.color);
 
-                  return (
-                    <div
-                      key={horario.id_horario}
-                      className="schedule-block"
-                      style={{
-                        top: (start - scheduleStart) * minuteHeight,
-                        height: Math.max((end - start) * minuteHeight, 32),
-                        background: color
-                      }}
-                    >
+                    return (
+                      <div
+                        key={horario.id_horario}
+                        className="schedule-block"
+                        style={{
+                          top: (start - scheduleStart) * minuteHeight,
+                          height: Math.max((end - start) * minuteHeight, 32),
+                          background: color
+                        }}
+                      >
                       <span>{materia?.nombre || horario.materia || 'Materia'}</span>
                       <small>
                         {formatTime(horario.hora_inicio)} - {formatTime(horario.hora_fin)}
@@ -1453,10 +1751,18 @@ function TaskDetail({ task, onCompleteTask }) {
         <h4>{task.titulo}</h4>
         <span className={`chip ${status.tone}`}>{status.label}</span>
       </div>
-      <p className="muted">Entrega: {formatDate(task.fecha_entrega)}</p>
+      <p className="muted">
+        Entrega: {formatDate(task.fecha_entrega)}
+        {task.hora_entrega ? ` · ${formatTime(task.hora_entrega)}` : ''}
+      </p>
       <p>{task.descripcion || 'Sin descripción agregada.'}</p>
       <div className="meta">
-        <span className="chip subtle">{task.materia || 'Materia'}</span>
+        <span
+          className="chip"
+          style={{ background: task.materia_color || '#7c3aed', color: 'white' }}
+        >
+          {task.materia || 'Materia'}
+        </span>
       </div>
       {!task.completada ? (
         <button type="button" className="button primary" onClick={() => onCompleteTask(task.id_tarea)}>
