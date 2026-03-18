@@ -1,23 +1,22 @@
-const CACHE_NAME = 'tareas-escolares-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-512.png'
-];
+const CACHE_NAME = 'tareas-escolares-v2';
 
+// No cacheamos nada por ahora para evitar problemas de despliegue
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
     })
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  // Ignorar extensiones de Chrome y peticiones que no sean http/https
+  if (!event.request.url.startsWith('http')) return;
+
+  // No usar caché, ir directo a la red
+  event.respondWith(fetch(event.request));
 });

@@ -1,5 +1,10 @@
 {
   "routes": [
+    {
+      "src": "/index.html",
+      "headers": { "cache-control": "no-cache, no-store, must-revalidate" },
+      "dest": "/index.html"
+    },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
