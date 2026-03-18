@@ -171,7 +171,8 @@ exports.googleLogin = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: 'Error al verificar token de Google: ' + error.message });
+    console.error('GOOGLE LOGIN ERROR:', error);
+    res.status(500).json({ error: 'Error al verificar token de Google: ' + (error.message || String(error)) });
   }
 };
 
