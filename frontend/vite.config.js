@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   build: {
+    outDir: '../dist',
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name].js',
