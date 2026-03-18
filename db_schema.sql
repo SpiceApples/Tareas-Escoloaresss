@@ -1,0 +1,58 @@
+CREATE TABLE IF NOT EXISTS usuarios (
+  id_usuario SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  correo VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS periodos (
+  id_periodo SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE NOT NULL,
+  id_usuario INT NOT NULL,
+  CONSTRAINT fk_periodo_usuario
+    FOREIGN KEY (id_usuario)
+    REFERENCES usuarios(id_usuario)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS materias (
+  id_materia SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  profesor VARCHAR(100),
+  id_periodo INT NOT NULL,
+  CONSTRAINT fk_materia_periodo
+    FOREIGN KEY (id_periodo)
+    REFERENCES periodos(id_periodo)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS horarios (
+  id_horario SERIAL PRIMARY KEY,
+  dia_semana CHAR(3) NOT NULL,
+  hora_inicio TIME NOT NULL,
+  hora_fin TIME NOT NULL,
+  id_materia INT NOT NULL,
+  CONSTRAINT chk_dia_semana
+    CHECK (dia_semana IN ('Lun', 'Mar', 'Mie', 'Jue', 'Vie')),
+  CONSTRAINT fk_horario_materia
+    FOREIGN KEY (id_materia)
+    REFERENCES materias(id_materia)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tareas (
+  id_tarea SERIAL PRIMARY KEY,
+  titulo VARCHAR(200) NOT NULL,
+  descripcion TEXT,
+  fecha_entrega DATE NOT NULL,
+  hora_entrega TIME,
+  completada BOOLEAN DEFAULT FALSE,
+  id_materia INT NOT NULL,
+  CONSTRAINT fk_tarea_materia
+    FOREIGN KEY (id_materia)
+    REFERENCES materias(id_materia)
+    ON DELETE CASCADE
+);
