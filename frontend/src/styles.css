@@ -1239,3 +1239,86 @@ body, .sidebar, .card, .summary-card, .auth-card, .auth-aside, .user-card, .cale
     min-width: 600px;
   }
 }
+
+/* ==============================
+   FULL MOBILE RESPONSIVENESS
+   ============================== */
+@media screen and (max-width: 768px) {
+  .app {
+    padding: 16px;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .sidebar {
+    position: relative;
+    top: 0;
+    padding: 20px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .brand, .user-card {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .nav-button {
+    flex: 1 1 calc(33% - 8px);
+    text-align: center;
+    padding: 12px 6px;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon {
+    margin: 0 0 6px 0;
+    font-size: 1.4rem;
+  }
+
+  .auth-container {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 5vh;
+  }
+
+  .auth-card-evernote {
+    width: 100%;
+    padding: 32px 24px;
+    margin: 0;
+  }
+
+  .table-wrapper, 
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .form-group input, 
+  .form-group select, 
+  .form-group textarea {
+    font-size: 16px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
