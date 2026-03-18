@@ -36,7 +36,11 @@ async function startServer() {
       if (fs.existsSync(sqlPath)) {
         const sql = fs.readFileSync(sqlPath, 'utf8');
         await pool.query(sql);
-        console.log('✅ Base de datos verificada/inicializada.');
+        
+        // Auto-migraciones para columnas nuevas en tablas existentes
+        await pool.query('ALTER TABLE materias ADD COLUMN IF NOT EXISTS color VARCHAR(7);');
+        
+        console.log('✅ Base de datos verificada/inicializada y migrada.');
       }
     } catch (dbError) {
       console.error('⚠️ Advertencia: Error en inicialización de DB, pero el servidor intentará arrancar:', dbError.message);

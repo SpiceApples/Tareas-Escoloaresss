@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS materias (
   id_materia SERIAL PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
   profesor VARCHAR(100),
+  color VARCHAR(7),
   id_periodo INT NOT NULL,
   CONSTRAINT fk_materia_periodo
     FOREIGN KEY (id_periodo)
