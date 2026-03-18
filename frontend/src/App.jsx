@@ -194,6 +194,14 @@ function Logo({ size = 40 }) {
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem('te_token') || '');
+  
+  useEffect(() => {
+    console.log('--- Configuración de Tareas Escolares ---');
+    console.log('API Base URL:', API_BASE);
+    console.log('Google Client:', GOOGLE_CLIENT_ID);
+    console.log('-----------------------------------------');
+  }, []);
+
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('te_user');
     return stored ? JSON.parse(stored) : null;
