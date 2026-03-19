@@ -972,6 +972,7 @@ function AuthPanel({
 }
 
 function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, selectedTask, onCompleteTask }) {
+  const t = useTranslation();
   const [calendarDate, setCalendarDate] = useState(() => new Date());
 
   const upcomingTasks = useMemo(() => {
@@ -986,19 +987,19 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
   return (
     <div className="panel">
       <div className="summary-grid">
-        <SummaryCard title="Pendientes" value={tareasStats.pendientes} tone="warning" />
-        <SummaryCard title="Completadas" value={tareasStats.completadas} tone="success" />
-        <SummaryCard title="Vencidas" value={tareasStats.vencidas} tone="danger" />
-        <SummaryCard title="Materias" value={materias.length} />
-        <SummaryCard title="Bloques de horario" value={horarios.length} />
+        <SummaryCard title={t("Pendientes", "Pending")} value={tareasStats.pendientes} tone="warning" />
+        <SummaryCard title={t("Completadas", "Completed")} value={tareasStats.completadas} tone="success" />
+        <SummaryCard title={t("Vencidas", "Overdue")} value={tareasStats.vencidas} tone="danger" />
+        <SummaryCard title={t("Materias", "Subjects")} value={materias.length} />
+        <SummaryCard title={t("Bloques de horario", "Time blocks")} value={horarios.length} />
       </div>
 
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-header">
             <div>
-              <h3>Calendario</h3>
-              <p className="muted">Tareas pendientes y completadas del mes.</p>
+              <h3>{t('Calendario', 'Calendar')}</h3>
+              <p className="muted">{t('Tareas pendientes y completadas del mes.', 'Pending and completed tasks for the month.')}</p>
             </div>
             <div className="calendar-nav">
               <button type="button" className="button ghost" onClick={() => {
@@ -1006,7 +1007,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
                 copy.setMonth(copy.getMonth() - 1);
                 setCalendarDate(copy);
               }}>
-                Anterior
+                {t('Anterior', 'Prev')}
               </button>
               <span>{monthFormatter.format(calendarDate)}</span>
               <button type="button" className="button ghost" onClick={() => {
@@ -1014,7 +1015,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
                 copy.setMonth(copy.getMonth() + 1);
                 setCalendarDate(copy);
               }}>
-                Siguiente
+                {t('Siguiente', 'Next')}
               </button>
             </div>
           </div>
@@ -1027,10 +1028,10 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
 
         <div className="side-column">
           <div className="card">
-            <h3>Próximas entregas</h3>
+            <h3>{t('Próximas entregas', 'Upcoming deadlines')}</h3>
             <div className="list">
               {upcomingTasks.length === 0 ? (
-                <EmptyState message="No hay tareas próximas." />
+                <EmptyState message={t("No hay tareas próximas.", "No upcoming tasks.")} />
               ) : (
                 upcomingTasks.map((tarea) => {
                   const status = buildTaskStatus(tarea);
@@ -1055,11 +1056,11 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
           </div>
 
           <div className="card">
-            <h3>Detalle de tarea</h3>
+            <h3>{t('Detalle de tarea', 'Task detail')}</h3>
             {selectedTask ? (
               <TaskDetail task={selectedTask} onCompleteTask={onCompleteTask} />
             ) : (
-              <EmptyState message="Selecciona una tarea del calendario o la lista." />
+              <EmptyState message={t("Selecciona una tarea del calendario o la lista.", "Select a task from the calendar or list.")} />
             )}
           </div>
         </div>
@@ -1069,6 +1070,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
 }
 
 function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
+  const t = useTranslation();
   const [form, setForm] = useState(initPeriodoForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -1086,10 +1088,10 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
   return (
     <div className="panel">
       <div className="card">
-        <h3>{editingId ? 'Editar periodo' : 'Nuevo periodo'}</h3>
+        <h3>{editingId ? t('Editar periodo', 'Edit term') : t('Nuevo periodo', 'New term')}</h3>
         <form className="form inline" onSubmit={handleSubmit}>
           <label>
-            Nombre
+            {t('Nombre', 'Name')}
             <input
               type="text"
               value={form.nombre}
@@ -1098,7 +1100,7 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
             />
           </label>
           <label>
-            Fecha inicio
+            {t('Fecha inicio', 'Start date')}
             <input
               type="date"
               value={form.fecha_inicio}
@@ -1107,7 +1109,7 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
             />
           </label>
           <label>
-            Fecha fin
+            {t('Fecha fin', 'End date')}
             <input
               type="date"
               value={form.fecha_fin}
@@ -1116,7 +1118,7 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
             />
           </label>
           <label>
-            Color
+            {t('Color', 'Color')}
             <input
               type="color"
               value={form.color || '#7c3aed'}
@@ -1125,14 +1127,14 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
           </label>
           <div className="actions">
             <button type="submit" className="button primary">
-              {editingId ? 'Guardar cambios' : 'Crear periodo'}
+              {editingId ? t('Guardar cambios', 'Save changes') : t('Crear periodo', 'Create term')}
             </button>
             {editingId ? (
               <button type="button" className="button ghost" onClick={() => {
                 setEditingId(null);
                 setForm(initPeriodoForm);
               }}>
-                Cancelar
+                {t('Cancelar', 'Cancel')}
               </button>
             ) : null}
           </div>
@@ -1140,10 +1142,10 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
       </div>
 
       <div className="card">
-        <h3>Mis periodos</h3>
+        <h3>{t('Mis periodos', 'My terms')}</h3>
         <div className="table">
           {periodos.length === 0 ? (
-            <EmptyState message="Aún no tienes periodos registrados." />
+            <EmptyState message={t("Aún no tienes periodos registrados.", "You don't have any terms registered yet.")} />
           ) : (
             periodos.map((periodo) => (
               <div
@@ -1167,10 +1169,10 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
                       color: periodo.color || ''
                     });
                   }}>
-                    Editar
+                    {t('Editar', 'Edit')}
                   </button>
                   <button type="button" className="button ghost danger" onClick={() => onDelete(periodo.id_periodo)}>
-                    Eliminar
+                    {t('Eliminar', 'Delete')}
                   </button>
                 </div>
               </div>
@@ -1183,6 +1185,7 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
 }
 
 function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate, onDelete }) {
+  const t = useTranslation();
   const [form, setForm] = useState({ ...initMateriaForm, id_periodo: activePeriodoId || '' });
   const [editingId, setEditingId] = useState(null);
 
@@ -1207,10 +1210,10 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
   return (
     <div className="panel">
       <div className="card">
-        <h3>{editingId ? 'Editar materia' : 'Nueva materia'}</h3>
+        <h3>{editingId ? t('Editar materia', 'Edit subject') : t('Nueva materia', 'New subject')}</h3>
         <form className="form inline" onSubmit={handleSubmit}>
           <label>
-            Nombre
+            {t('Nombre', 'Name')}
             <input
               type="text"
               value={form.nombre}
@@ -1219,22 +1222,22 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
             />
           </label>
           <label>
-            Profesor
+            {t('Profesor', 'Teacher')}
             <input
               type="text"
               value={form.profesor}
               onChange={(event) => setForm({ ...form, profesor: event.target.value })}
-              placeholder="Opcional"
+              placeholder={t("Opcional", "Optional")}
             />
           </label>
           <label>
-            Periodo
+            {t('Periodo', 'Term')}
             <select
               value={form.id_periodo}
               onChange={(event) => setForm({ ...form, id_periodo: event.target.value })}
               required
             >
-              <option value="">Selecciona un periodo</option>
+              <option value="">{t('Selecciona un periodo', 'Select a term')}</option>
               {periodos.map((periodo) => (
                 <option key={periodo.id_periodo} value={periodo.id_periodo}>
                   {periodo.nombre}
@@ -1243,7 +1246,7 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
             </select>
           </label>
           <label>
-            Color
+            {t('Color', 'Color')}
             <input
               type="color"
               value={form.color || '#7c3aed'}
@@ -1252,14 +1255,14 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
           </label>
           <div className="actions">
             <button type="submit" className="button primary">
-              {editingId ? 'Guardar cambios' : 'Crear materia'}
+              {editingId ? t('Guardar cambios', 'Save changes') : t('Crear materia', 'Create subject')}
             </button>
             {editingId ? (
               <button type="button" className="button ghost" onClick={() => {
                 setEditingId(null);
                 setForm({ ...initMateriaForm, id_periodo: activePeriodoId || '' });
               }}>
-                Cancelar
+                {t('Cancelar', 'Cancel')}
               </button>
             ) : null}
           </div>
@@ -1267,10 +1270,10 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
       </div>
 
       <div className="card">
-        <h3>Materias del periodo</h3>
+        <h3>{t('Materias del periodo', 'Subjects for the term')}</h3>
         <div className="table">
           {materias.length === 0 ? (
-            <EmptyState message="Aún no hay materias en este periodo." />
+            <EmptyState message={t("Aún no hay materias en este periodo.", "No subjects in this term yet.")} />
           ) : (
             materias.map((materia) => (
               <div
@@ -1280,7 +1283,7 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
               >
                 <div>
                   <p className="strong">{materia.nombre}</p>
-                  <p className="muted">{materia.profesor || 'Sin profesor asignado'}</p>
+                  <p className="muted">{materia.profesor || t('Sin profesor asignado', 'No teacher assigned')}</p>
                 </div>
                 <div className="row-actions">
                   <button type="button" className="button ghost" onClick={() => {
@@ -1292,10 +1295,10 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
                       color: materia.color || ''
                     });
                   }}>
-                    Editar
+                    {t('Editar', 'Edit')}
                   </button>
                   <button type="button" className="button ghost danger" onClick={() => onDelete(materia.id_materia)}>
-                    Eliminar
+                    {t('Eliminar', 'Delete')}
                   </button>
                 </div>
               </div>
@@ -1308,6 +1311,7 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
 }
 
 function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplete, onSelectTask }) {
+  const t = useTranslation();
   const [form, setForm] = useState(initTaskForm);
   const [editingId, setEditingId] = useState(null);
   const [filter, setFilter] = useState('todas');
@@ -1349,11 +1353,11 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
   return (
     <div className="panel">
       <div className="card">
-        <h3>{editingId ? 'Editar tarea' : 'Nueva tarea'}</h3>
+        <h3>{editingId ? t('Editar tarea', 'Edit task') : t('Nueva tarea', 'New task')}</h3>
         <form className="form" onSubmit={handleSubmit}>
           <div className="form-grid">
             <label>
-              Título
+              {t('Título', 'Title')}
               <input
                 type="text"
                 value={form.titulo}
@@ -1362,13 +1366,13 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
               />
             </label>
             <label>
-              Materia
+              {t('Materia', 'Subject')}
               <select
                 value={form.id_materia}
                 onChange={(event) => setForm({ ...form, id_materia: event.target.value })}
                 required
               >
-                <option value="">Selecciona una materia</option>
+                <option value="">{t('Selecciona una materia', 'Select a subject')}</option>
                 {materias.map((materia) => (
                   <option key={materia.id_materia} value={materia.id_materia}>
                     {materia.nombre}
@@ -1377,7 +1381,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
               </select>
             </label>
             <label>
-              Fecha de entrega
+              {t('Fecha de entrega', 'Due date')}
               <input
                 type="date"
                 value={form.fecha_entrega}
@@ -1386,7 +1390,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
               />
             </label>
             <label>
-              Hora de entrega
+              {t('Hora de entrega', 'Due time')}
               <input
                 type="time"
                 value={form.hora_entrega || ''}
@@ -1394,7 +1398,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
               />
             </label>
             <label>
-              Color
+              {t('Color', 'Color')}
               <input
                 type="color"
                 value={form.color || '#7c3aed'}
@@ -1403,7 +1407,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
             </label>
           </div>
           <label>
-            Descripción
+            {t('Descripción', 'Description')}
             <textarea
               rows="3"
               value={form.descripcion}
@@ -1412,14 +1416,14 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
           </label>
           <div className="actions">
             <button type="submit" className="button primary">
-              {editingId ? 'Guardar cambios' : 'Crear tarea'}
+              {editingId ? t('Guardar cambios', 'Save changes') : t('Crear tarea', 'Create task')}
             </button>
             {editingId ? (
               <button type="button" className="button ghost" onClick={() => {
                 setEditingId(null);
                 setForm(initTaskForm);
               }}>
-                Cancelar
+                {t('Cancelar', 'Cancel')}
               </button>
             ) : null}
           </div>
@@ -1429,28 +1433,28 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
       <div className="card">
         <div className="card-header">
           <div>
-            <h3>Lista de tareas</h3>
-            <p className="muted">Filtra por estado y da seguimiento a cada entrega.</p>
+            <h3>{t('Lista de tareas', 'Task list')}</h3>
+            <p className="muted">{t('Filtra por estado y da seguimiento a cada entrega.', 'Filter by status and track each delivery.')}</p>
           </div>
           <div className="filter-group">
             <button type="button" className={filter === 'todas' ? 'active' : ''} onClick={() => setFilter('todas')}>
-              Todas
+              {t('Todas', 'All')}
             </button>
             <button type="button" className={filter === 'pendientes' ? 'active' : ''} onClick={() => setFilter('pendientes')}>
-              Pendientes
+              {t('Pendientes', 'Pending')}
             </button>
             <button type="button" className={filter === 'completadas' ? 'active' : ''} onClick={() => setFilter('completadas')}>
-              Completadas
+              {t('Completadas', 'Completed')}
             </button>
             <button type="button" className={filter === 'vencidas' ? 'active' : ''} onClick={() => setFilter('vencidas')}>
-              Vencidas
+              {t('Vencidas', 'Overdue')}
             </button>
           </div>
         </div>
 
         <div className="table">
           {filtered.length === 0 ? (
-            <EmptyState message="No hay tareas para mostrar en este filtro." />
+            <EmptyState message={t("No hay tareas para mostrar en este filtro.", "No tasks to show in this filter.")} />
           ) : (
             filtered.map((tarea) => {
               const status = buildTaskStatus(tarea);
@@ -1468,19 +1472,19 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
                     </p>
                     <div className="meta">
                       <span className="chip subtle" style={{ background: `${tarea.materia_color}22`, color: tarea.materia_color }}>
-                        {tarea.materia || 'Materia'}
+                        {tarea.materia || t('Materia', 'Subject')}
                       </span>
-                      <span className={`chip ${status.tone}`}>{status.label}</span>
+                      <span className={`chip ${status.tone}`}>{t(status.label, status.label === 'Completada' ? 'Completed' : status.label === 'Pendiente' ? 'Pending' : 'Overdue')}</span>
                     </div>
                   </div>
                   <div className="row-actions">
                     {!tarea.completada ? (
                       <button type="button" className="button ghost" onClick={() => onComplete(tarea.id_tarea)}>
-                        Marcar completa
+                        {t('Marcar completa', 'Mark complete')}
                       </button>
                     ) : null}
                     <button type="button" className="button ghost" onClick={() => onSelectTask(tarea)}>
-                      Ver detalle
+                      {t('Ver detalle', 'View details')}
                     </button>
                     <button type="button" className="button ghost" onClick={() => {
                       setEditingId(tarea.id_tarea);
@@ -1510,6 +1514,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
 }
 
 function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
+  const t = useTranslation();
   const [form, setForm] = useState(initHorarioForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -1534,16 +1539,16 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
   return (
     <div className="panel">
       <div className="card">
-        <h3>{editingId ? 'Editar bloque de horario' : 'Nuevo bloque de horario'}</h3>
+        <h3>{editingId ? t('Editar bloque de horario', 'Edit time block') : t('Nuevo bloque de horario', 'New time block')}</h3>
         <form className="form inline" onSubmit={handleSubmit}>
           <label>
-            Materia
+            {t('Materia', 'Subject')}
             <select
               value={form.id_materia}
               onChange={(event) => setForm({ ...form, id_materia: event.target.value })}
               required
             >
-              <option value="">Selecciona una materia</option>
+              <option value="">{t('Selecciona una materia', 'Select a subject')}</option>
               {materias.map((materia) => (
                 <option key={materia.id_materia} value={materia.id_materia}>
                   {materia.nombre}
@@ -1552,20 +1557,20 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
             </select>
           </label>
           <label>
-            Día
+            {t('Día', 'Day')}
             <select
               value={form.dia_semana}
               onChange={(event) => setForm({ ...form, dia_semana: event.target.value })}
             >
               {SCHOOL_DAYS.map((day) => (
                 <option key={day} value={day}>
-                  {day}
+                  {t(day, day === 'Lun' ? 'Mon' : day === 'Mar' ? 'Tue' : day === 'Mie' ? 'Wed' : day === 'Jue' ? 'Thu' : 'Fri')}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Inicio
+            {t('Inicio', 'Start')}
             <input
               type="time"
               value={form.hora_inicio}
@@ -1574,7 +1579,7 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
             />
           </label>
           <label>
-            Fin
+            {t('Fin', 'End')}
             <input
               type="time"
               value={form.hora_fin}
@@ -1583,7 +1588,7 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
             />
           </label>
           <label>
-            Color
+            {t('Color', 'Color')}
             <input
               type="color"
               value={form.color || '#7c3aed'}
@@ -1592,14 +1597,14 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
           </label>
           <div className="actions">
             <button type="submit" className="button primary">
-              {editingId ? 'Guardar cambios' : 'Crear horario'}
+              {editingId ? t('Guardar cambios', 'Save changes') : t('Crear horario', 'Create schedule')}
             </button>
             {editingId ? (
               <button type="button" className="button ghost" onClick={() => {
                 setEditingId(null);
                 setForm(initHorarioForm);
               }}>
-                Cancelar
+                {t('Cancelar', 'Cancel')}
               </button>
             ) : null}
           </div>
@@ -1609,23 +1614,23 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
       <div className="card">
         <div className="card-header">
           <div>
-            <h3>Horario semanal</h3>
-            <p className="muted">Vista en bloques de colores por materia.</p>
+            <h3>{t('Horario semanal', 'Weekly schedule')}</h3>
+            <p className="muted">{t('Vista en bloques de colores por materia.', 'Color-blocked view by subject.')}</p>
           </div>
         </div>
         <ScheduleGrid horarios={horarios} materias={materias} />
       </div>
 
       <div className="card">
-        <h3>Bloques registrados</h3>
+        <h3>{t('Bloques registrados', 'Registered blocks')}</h3>
         <div className="table">
           {horarios.length === 0 ? (
-            <EmptyState message="Registra horarios para visualizar la semana." />
+            <EmptyState message={t("Registra horarios para visualizar la semana.", "Register schedules to view the week.")} />
           ) : (
             horarios.map((horario) => (
               <div key={horario.id_horario} className="table-row">
                 <div>
-                  <p className="strong">{horario.materia || 'Materia'}</p>
+                  <p className="strong">{horario.materia || t('Materia', 'Subject')}</p>
                   <p className="muted">
                     {horario.dia_semana} · {formatTime(horario.hora_inicio)} - {formatTime(horario.hora_fin)}
                   </p>
@@ -1641,10 +1646,10 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
                       color: horario.color || ''
                     });
                   }}>
-                    Editar
+                    {t('Editar', 'Edit')}
                   </button>
                   <button type="button" className="button ghost danger" onClick={() => onDelete(horario.id_horario)}>
-                    Eliminar
+                    {t('Eliminar', 'Delete')}
                   </button>
                 </div>
               </div>
@@ -1657,6 +1662,7 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
 }
 
 function Calendar({ date, tasks, onSelectTask }) {
+  const t = useTranslation();
   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -1669,11 +1675,13 @@ function Calendar({ date, tasks, onSelectTask }) {
     cells.push(new Date(date.getFullYear(), date.getMonth(), day));
   }
 
+  const enDays = { Lun: 'Mon', Mar: 'Tue', Mie: 'Wed', Jue: 'Thu', Vie: 'Fri', Sab: 'Sat', Dom: 'Sun' };
+
   return (
     <div className="calendar">
       <div className="calendar-header">
         {DAY_LABELS.map((label) => (
-          <span key={label}>{label}</span>
+          <span key={label}>{t(label, enDays[label])}</span>
         ))}
       </div>
       <div className="calendar-grid">
@@ -1706,7 +1714,7 @@ function Calendar({ date, tasks, onSelectTask }) {
                   );
                 })}
                 {tasksForDay.length > 3 ? (
-                  <span className="muted">+{tasksForDay.length - 3} más</span>
+                  <span className="muted">+{tasksForDay.length - 3} {t('más', 'more')}</span>
                 ) : null}
               </div>
             </div>
@@ -1718,6 +1726,7 @@ function Calendar({ date, tasks, onSelectTask }) {
 }
 
 function ScheduleGrid({ horarios, materias }) {
+  const t = useTranslation();
   const scheduleStart = 7 * 60;
   const scheduleEnd = 20 * 60;
   const minuteHeight = 1.2;
@@ -1742,7 +1751,7 @@ function ScheduleGrid({ horarios, materias }) {
       <div className="schedule-grid">
         {SCHOOL_DAYS.map((day) => (
           <div key={day} className="schedule-day">
-            <div className="day-label">{day}</div>
+            <div className="day-label">{t(day, day === 'Lun' ? 'Mon' : day === 'Mar' ? 'Tue' : day === 'Mie' ? 'Wed' : day === 'Jue' ? 'Thu' : 'Fri')}</div>
             <div className="day-body" style={{ height: (scheduleEnd - scheduleStart) * minuteHeight }}>
               {horarios
                 .filter((horario) => horario.dia_semana === day)
@@ -1762,7 +1771,7 @@ function ScheduleGrid({ horarios, materias }) {
                           background: color
                         }}
                       >
-                      <span>{materia?.nombre || horario.materia || 'Materia'}</span>
+                      <span>{materia?.nombre || horario.materia || t('Materia', 'Subject')}</span>
                       <small>
                         {formatTime(horario.hora_inicio)} - {formatTime(horario.hora_fin)}
                       </small>
@@ -1778,30 +1787,31 @@ function ScheduleGrid({ horarios, materias }) {
 }
 
 function TaskDetail({ task, onCompleteTask }) {
+  const t = useTranslation();
   const status = buildTaskStatus(task);
 
   return (
     <div className="task-detail">
       <div className="task-header">
         <h4>{task.titulo}</h4>
-        <span className={`chip ${status.tone}`}>{status.label}</span>
+        <span className={`chip ${status.tone}`}>{t(status.label, status.label === 'Completada' ? 'Completed' : status.label === 'Pendiente' ? 'Pending' : 'Overdue')}</span>
       </div>
       <p className="muted">
-        Entrega: {formatDate(task.fecha_entrega)}
+        {t('Entrega:', 'Due:')} {formatDate(task.fecha_entrega)}
         {task.hora_entrega ? ` · ${formatTime(task.hora_entrega)}` : ''}
       </p>
-      <p>{task.descripcion || 'Sin descripción agregada.'}</p>
+      <p>{task.descripcion || t('Sin descripción agregada.', 'No description added.')}</p>
       <div className="meta">
         <span
           className="chip"
           style={{ background: task.materia_color || '#7c3aed', color: 'white' }}
         >
-          {task.materia || 'Materia'}
+          {task.materia || t('Materia', 'Subject')}
         </span>
       </div>
       {!task.completada ? (
         <button type="button" className="button primary" onClick={() => onCompleteTask(task.id_tarea)}>
-          Marcar como completada
+          {t('Marcar como completada', 'Mark as completed')}
         </button>
       ) : null}
     </div>
