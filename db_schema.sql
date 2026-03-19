@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS periodos (
   nombre VARCHAR(100) NOT NULL,
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
+  color VARCHAR(7),
   id_usuario INT NOT NULL,
   CONSTRAINT fk_periodo_usuario
     FOREIGN KEY (id_usuario)
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS horarios (
   dia_semana CHAR(3) NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
+  color VARCHAR(7),
   id_materia INT NOT NULL,
   CONSTRAINT chk_dia_semana
     CHECK (dia_semana IN ('Lun', 'Mar', 'Mie', 'Jue', 'Vie')),
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS tareas (
   fecha_entrega DATE NOT NULL,
   hora_entrega TIME,
   completada BOOLEAN DEFAULT FALSE,
+  color VARCHAR(7),
   id_materia INT NOT NULL,
   CONSTRAINT fk_tarea_materia
     FOREIGN KEY (id_materia)

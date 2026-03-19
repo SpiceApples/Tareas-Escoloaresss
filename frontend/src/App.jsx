@@ -22,16 +22,19 @@ const MATERIA_COLORS = [
   '#14b8a6',
   '#84cc16'
 ];
+const EN_DAYS = { Lun: 'Mon', Mar: 'Tue', Mie: 'Wed', Jue: 'Thu', Vie: 'Fri', Sab: 'Sat', Dom: 'Sun' };
 
-const getLang = () => localStorage.getItem('school_lang') || 'es';
+const getLang = () => localStorage.getItem('te_lang') || 'es';
 
-const formatMonth = (value) => {
+const formatMonth = (value, customLang) => {
   if (!value) return '';
-  const lang = getLang();
-  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', {
-    year: 'numeric',
-    month: 'long'
-  }).format(value);
+  const lang = customLang || (typeof localStorage !== 'undefined' ? localStorage.getItem('te_lang') : 'es');
+  const date = new Date(value);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  const es = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const en = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return lang === 'en' ? `${en[month]} ${year}` : `${es[month]} de ${year}`;
 };
 
 const normalizeDate = (value) => {
@@ -42,9 +45,9 @@ const normalizeDate = (value) => {
   return parsed;
 };
 
-const formatDate = (value) => {
+const formatDate = (value, customLang) => {
   const parsed = normalizeDate(value);
-  const lang = getLang();
+  const lang = customLang || getLang();
   if (!parsed) return lang === 'en' ? 'No date' : 'Sin fecha';
   return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', {
     year: 'numeric',
@@ -108,11 +111,13 @@ const request = async (path, { method = 'GET', body, token } = {}) => {
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw buildError(data?.error || 'Sesión expirada, vuelve a iniciar sesión.', 'AUTH');
+    const lang = localStorage.getItem('te_lang') || 'es';
+    throw buildError(data?.error || (lang === 'en' ? 'Session expired, please log in again.' : 'Sesión expirada, vuelve a iniciar sesión.'), 'AUTH');
   }
 
   if (!response.ok) {
-    throw buildError(data?.error || 'Error inesperado en la solicitud.', 'REQUEST');
+    const lang = localStorage.getItem('te_lang') || 'es';
+    throw buildError(data?.error || (lang === 'en' ? 'Unexpected error in request.' : 'Error inesperado en la solicitud.'), 'REQUEST');
   }
 
   return data;
@@ -238,8 +243,16 @@ export default function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem('te_lang') || 'es');
   const [installPrompt, setInstallPrompt] = useState(null);
 
+  const t = (esStr, enStr) => (language === 'en' ? (enStr || esStr) : esStr);
+
   useEffect(() => {
     localStorage.setItem('te_lang', language);
+    document.documentElement.lang = language;
+    document.title = t('Tareas Escolares', 'School Tasks');
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', t('Organizador de tareas, materias y horarios para estudiantes.', 'Student task manager, subjects and schedules.'));
+    }
   }, [language]);
 
   useEffect(() => {
@@ -259,7 +272,11 @@ export default function App() {
         setInstallPrompt(null);
       }
     } else {
-      alert('Para instalar:\n\nEn Android/Chrome: Toca los tres puntos (⋮) y selecciona "Instalar aplicación".\n\nEn iOS/Safari: Toca el botón compartir (📤) y selecciona "Agregar a la pantalla de inicio".');
+      const msg = t(
+        'Para instalar:\n\nEn Android/Chrome: Toca los tres puntos (⋮) y selecciona "Instalar aplicación".\n\nEn iOS/Safari: Toca el botón compartir (📤) y selecciona "Agregar a la pantalla de inicio".',
+        'To install:\n\nOn Android/Chrome: Tap the three dots (⋮) and select "Install app".\n\nOn iOS/Safari: Tap the share button (📤) and select "Add to home screen".'
+      );
+      alert(msg);
     }
   };
 
@@ -371,7 +388,7 @@ export default function App() {
       setUser(data.usuario);
       localStorage.setItem('te_token', data.token);
       localStorage.setItem('te_user', JSON.stringify(data.usuario));
-      showNotice('success', 'Bienvenido, sesión iniciada.');
+      showNotice('success', t('Bienvenido, sesión iniciada.', 'Welcome, logged in.'));
     } catch (error) {
       showNotice('danger', error.message);
     } finally {
@@ -395,7 +412,7 @@ export default function App() {
       setUser(data.usuario);
       localStorage.setItem('te_token', data.token);
       localStorage.setItem('te_user', JSON.stringify(data.usuario));
-      showNotice('success', 'Cuenta creada e iniciada.');
+      showNotice('success', t('Cuenta creada e iniciada.', 'Account created and logged in.'));
     } catch (error) {
       showNotice('danger', error.message);
     } finally {
@@ -415,7 +432,7 @@ export default function App() {
       setUser(data.usuario);
       localStorage.setItem('te_token', data.token);
       localStorage.setItem('te_user', JSON.stringify(data.usuario));
-      showNotice('success', 'Bienvenido con Google.');
+      showNotice('success', t('Bienvenido con Google.', 'Welcome with Google.'));
     } catch (error) {
       showNotice('danger', error.message);
     } finally {
@@ -458,7 +475,7 @@ export default function App() {
   const handleCreatePeriodo = async (payload) => {
     try {
       await request('/api/periodos/', { method: 'POST', body: payload, token });
-      showNotice('success', 'Periodo guardado.');
+      showNotice('success', t('Periodo guardado.', 'Term saved.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -468,7 +485,7 @@ export default function App() {
   const handleUpdatePeriodo = async (id, payload) => {
     try {
       await request(`/api/periodos/${id}`, { method: 'PUT', body: payload, token });
-      showNotice('success', 'Periodo actualizado.');
+      showNotice('success', t('Periodo actualizado.', 'Term updated.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -478,7 +495,7 @@ export default function App() {
   const handleDeletePeriodo = async (id) => {
     try {
       await request(`/api/periodos/${id}`, { method: 'DELETE', token });
-      showNotice('success', 'Periodo eliminado.');
+      showNotice('success', t('Periodo eliminado.', 'Term deleted.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -488,7 +505,7 @@ export default function App() {
   const handleCreateMateria = async (payload) => {
     try {
       await request('/api/materias/', { method: 'POST', body: payload, token });
-      showNotice('success', 'Materia guardada.');
+      showNotice('success', t('Materia guardada.', 'Subject saved.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -498,7 +515,7 @@ export default function App() {
   const handleUpdateMateria = async (id, payload) => {
     try {
       await request(`/api/materias/${id}`, { method: 'PUT', body: payload, token });
-      showNotice('success', 'Materia actualizada.');
+      showNotice('success', t('Materia personalizada.', 'Subject updated.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -508,7 +525,7 @@ export default function App() {
   const handleDeleteMateria = async (id) => {
     try {
       await request(`/api/materias/${id}`, { method: 'DELETE', token });
-      showNotice('success', 'Materia eliminada.');
+      showNotice('success', t('Materia eliminada.', 'Subject deleted.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -518,7 +535,7 @@ export default function App() {
   const handleCreateTarea = async (payload) => {
     try {
       await request('/api/tareas/', { method: 'POST', body: payload, token });
-      showNotice('success', 'Tarea creada.');
+      showNotice('success', t('Tarea creada.', 'Task created.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -528,7 +545,7 @@ export default function App() {
   const handleUpdateTarea = async (id, payload) => {
     try {
       await request(`/api/tareas/${id}`, { method: 'PUT', body: payload, token });
-      showNotice('success', 'Tarea actualizada.');
+      showNotice('success', t('Tarea actualizada.', 'Task updated.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -538,7 +555,7 @@ export default function App() {
   const handleDeleteTarea = async (id) => {
     try {
       await request(`/api/tareas/${id}`, { method: 'DELETE', token });
-      showNotice('success', 'Tarea eliminada.');
+      showNotice('success', t('Tarea eliminada.', 'Task deleted.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -548,7 +565,7 @@ export default function App() {
   const handleCompleteTarea = async (id) => {
     try {
       await request(`/api/tareas/${id}/completar`, { method: 'PATCH', token });
-      showNotice('success', 'Tarea completada.');
+      showNotice('success', t('Tarea completada.', 'Task completed.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -558,7 +575,7 @@ export default function App() {
   const handleCreateHorario = async (payload) => {
     try {
       await request('/api/horarios/', { method: 'POST', body: payload, token });
-      showNotice('success', 'Horario guardado.');
+      showNotice('success', t('Horario guardado.', 'Schedule saved.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -568,7 +585,7 @@ export default function App() {
   const handleUpdateHorario = async (id, payload) => {
     try {
       await request(`/api/horarios/${id}`, { method: 'PUT', body: payload, token });
-      showNotice('success', 'Horario actualizado.');
+      showNotice('success', t('Horario actualizado.', 'Schedule updated.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -578,7 +595,7 @@ export default function App() {
   const handleDeleteHorario = async (id) => {
     try {
       await request(`/api/horarios/${id}`, { method: 'DELETE', token });
-      showNotice('success', 'Horario eliminado.');
+      showNotice('success', t('Horario eliminado.', 'Schedule deleted.'));
       await loadAll();
     } catch (error) {
       showNotice('danger', error.message);
@@ -635,12 +652,12 @@ export default function App() {
           <div className="brand">
             <Logo size={42} />
             <div className="brand-text">
-              <span className="brand-kicker">Tareas</span>
-              <h1>Escolares</h1>
+              <span className="brand-kicker">{t('Tareas', 'School')}</span>
+              <h1>{t('Escolares', 'Tasks')}</h1>
             </div>
           </div>
           <div className="user-card">
-            <p className="user-name">{user?.nombre || 'Alumno'}</p>
+            <p className="user-name">{user?.nombre || t('Alumno', 'Student')}</p>
             <span className="user-email">{user?.correo}</span>
           </div>
           <nav className="nav">
@@ -652,13 +669,13 @@ export default function App() {
                 onClick={() => setView(item.id)}
               >
                 <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{language === 'en' ? item.labelEn : item.labelEs}</span>
+                <span className="nav-label">{t(item.labelEs, item.labelEn)}</span>
               </button>
             ))}
           </nav>
-          <button type="button" className="nav-button ghost" onClick={() => handleLogout(language === 'en' ? 'Logged out.' : 'Sesión cerrada.')}
+          <button type="button" className="nav-button ghost" onClick={() => handleLogout(t('Sesión cerrada.', 'Logged out.'))}
           >
-            {language === 'en' ? 'Log out' : 'Cerrar sesión'}
+            {t('Cerrar sesión', 'Log out')}
           </button>
           
           {!window.matchMedia('(display-mode: standalone)').matches && (
@@ -669,7 +686,7 @@ export default function App() {
             >
               <span className="nav-icon">{installPrompt ? '📲' : 'ℹ️'}</span>
               <span className="nav-label">
-                {installPrompt ? 'Instalar App' : '¿Cómo instalar?'}
+                {installPrompt ? t('Instalar App', '[Fixed] Install App') : t('¿Cómo instalar?', '[Fixed] How to install?')}
               </span>
             </button>
           )}
@@ -680,11 +697,11 @@ export default function App() {
             style={{ marginTop: '8px' }}
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
-              alert('¡Enlace copiado al portapapeles!');
+              alert(t('¡Enlace copiado al portapapeles!', 'Link copied to clipboard!'));
             }}
           >
             <span className="nav-icon">🔗</span>
-            <span className="nav-label">Compartir link</span>
+            <span className="nav-label">{t('Compartir link', '[Fixed] Share link')}</span>
           </button>
         </aside>
 
@@ -693,21 +710,23 @@ export default function App() {
             <div className="mobile-brand">
               <Logo size={32} />
               <div className="brand-text">
-                <span className="brand-kicker">Tareas</span>
-                <h1>Escolares</h1>
+                <span className="brand-kicker">{t('Tareas', 'School')}</span>
+                <h1>{t('Escolares', 'Tasks')}</h1>
               </div>
             </div>
             <div>
-              <p className="eyebrow">Panel de seguimiento</p>
-              <h2>Hola {user?.nombre?.split(' ')[0] || 'de nuevo'}</h2>
+              <p className="eyebrow">{t('Panel de seguimiento', 'Tracking panel')}</p>
+              <h2>{t('Hola', 'Hello')} {user?.nombre?.split(' ')[0] || t('de nuevo', 'again')}</h2>
             </div>
             <div className="period-selector">
               <button
                 type="button"
                 className="theme-toggle"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                aria-label="Toggle theme"
+                title={theme === 'dark' 
+                  ? t('Cambiar a modo claro', 'Switch to light mode') 
+                  : t('Cambiar a modo oscuro', 'Switch to dark mode')}
+                aria-label={t('Cambiar tema', 'Toggle theme')}
               >
                 <div className="theme-toggle-track">
                   <div className="theme-toggle-thumb">
@@ -725,12 +744,12 @@ export default function App() {
                 {language === 'es' ? 'EN' : 'ES'}
               </button>
               <label>
-                {language === 'en' ? 'Current section' : 'Periodo actual'}
+                {t('Periodo actual', 'Current section')}
                 <select
                   value={activePeriodoId || ''}
                   onChange={(event) => setActivePeriodoId(event.target.value ? Number(event.target.value) : null)}
                 >
-                  <option value="">{language === 'en' ? 'All terms' : 'Todos los periodos'}</option>
+                  <option value="">{t('Todos los periodos', 'All terms')}</option>
                   {periodos.map((periodo) => (
                     <option key={periodo.id_periodo} value={periodo.id_periodo}>
                       {periodo.nombre}
@@ -738,7 +757,7 @@ export default function App() {
                   ))}
                 </select>
               </label>
-              <span className="sync-pill">{isSyncing ? 'Sincronizando…' : 'En línea'}</span>
+              <span className="sync-pill">{isSyncing ? t('Sincronizando…', 'Syncing...') : t('En línea', 'Online')}</span>
             </div>
           </header>
 
@@ -749,7 +768,7 @@ export default function App() {
           ) : null}
 
           {isLoading ? (
-            <div className="loading">Cargando información…</div>
+            <div className="loading">{t('Cargando información…', 'Loading information...')}</div>
           ) : (
             <div className="content">
               {view === 'dashboard' && (
@@ -843,7 +862,7 @@ function AuthPanel({
       onForgotPassword(form.correo);
     } else if (mode === 'reset') {
       if (form.password !== form.confirmPassword) {
-        alert('Las contraseñas no coinciden.');
+        alert(t('Las contraseñas no coinciden.', "Passwords don't match."));
         return;
       }
       onResetPassword(resetToken, form.password);
@@ -857,8 +876,10 @@ function AuthPanel({
           type="button"
           className="theme-toggle"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-          aria-label="Toggle theme"
+          title={theme === 'dark' 
+            ? t('Cambiar a modo claro', 'Switch to light mode') 
+            : t('Cambiar a modo oscuro', 'Switch to dark mode')}
+          aria-label={t('Cambiar tema', 'Toggle theme')}
         >
           <div className="theme-toggle-track">
             <div className="theme-toggle-thumb">
@@ -979,6 +1000,7 @@ function AuthPanel({
 
 function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, selectedTask, onCompleteTask }) {
   const t = useTranslation();
+  const lang = useContext(LanguageContext);
   const [calendarDate, setCalendarDate] = useState(() => new Date());
 
   const upcomingTasks = useMemo(() => {
@@ -1015,7 +1037,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
               }}>
                 {t('Anterior', 'Prev')}
               </button>
-              <span>{formatMonth(calendarDate)}</span>
+              <span>{formatMonth(calendarDate, lang)}</span>
               <button type="button" className="button ghost" onClick={() => {
                 const copy = new Date(calendarDate);
                 copy.setMonth(copy.getMonth() + 1);
@@ -1051,9 +1073,9 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
                     >
                       <div>
                         <p className="strong">{tarea.titulo}</p>
-                        <p className="muted">{formatDate(tarea.fecha_entrega)}</p>
+                        <p className="muted">{formatDate(tarea.fecha_entrega, lang)}</p>
                       </div>
-                      <span className={`chip ${status.tone}`}>{status.label}</span>
+                      <span className={`chip ${status.tone}`}>{t(status.label, status.label === 'Completada' ? 'Completed' : status.label === 'Pendiente' ? 'Pending' : 'Overdue')}</span>
                     </button>
                   );
                 })
@@ -1077,6 +1099,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
 
 function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
   const t = useTranslation();
+  const lang = useContext(LanguageContext);
   const [form, setForm] = useState(initPeriodoForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -1162,7 +1185,7 @@ function PeriodosPanel({ periodos, onCreate, onUpdate, onDelete }) {
                 <div>
                   <p className="strong">{periodo.nombre}</p>
                   <p className="muted">
-                    {formatDate(periodo.fecha_inicio)} - {formatDate(periodo.fecha_fin)}
+                    {formatDate(periodo.fecha_inicio, lang)} - {formatDate(periodo.fecha_fin, lang)}
                   </p>
                 </div>
                 <div className="row-actions">
@@ -1318,6 +1341,7 @@ function MateriasPanel({ materias, periodos, activePeriodoId, onCreate, onUpdate
 
 function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplete, onSelectTask }) {
   const t = useTranslation();
+  const lang = useContext(LanguageContext);
   const [form, setForm] = useState(initTaskForm);
   const [editingId, setEditingId] = useState(null);
   const [filter, setFilter] = useState('todas');
@@ -1473,7 +1497,7 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
                   <div>
                     <p className="strong">{tarea.titulo}</p>
                     <p className="muted">
-                      {formatDate(tarea.fecha_entrega)} 
+                      {formatDate(tarea.fecha_entrega, lang)} 
                       {tarea.hora_entrega ? ` · ${formatTime(tarea.hora_entrega)}` : ''}
                     </p>
                     <div className="meta">
@@ -1503,10 +1527,10 @@ function TareasPanel({ tareas, materias, onCreate, onUpdate, onDelete, onComplet
                         color: tarea.color || ''
                       });
                     }}>
-                      Editar
+                      {t('Editar', 'Edit')}
                     </button>
                     <button type="button" className="button ghost danger" onClick={() => onDelete(tarea.id_tarea)}>
-                      Eliminar
+                      {t('Eliminar', 'Delete')}
                     </button>
                   </div>
                 </div>
@@ -1638,7 +1662,7 @@ function HorariosPanel({ horarios, materias, onCreate, onUpdate, onDelete }) {
                 <div>
                   <p className="strong">{horario.materia || t('Materia', 'Subject')}</p>
                   <p className="muted">
-                    {horario.dia_semana} · {formatTime(horario.hora_inicio)} - {formatTime(horario.hora_fin)}
+                    {t(horario.dia_semana, EN_DAYS[horario.dia_semana])} · {formatTime(horario.hora_inicio)} - {formatTime(horario.hora_fin)}
                   </p>
                 </div>
                 <div className="row-actions">
@@ -1681,13 +1705,11 @@ function Calendar({ date, tasks, onSelectTask }) {
     cells.push(new Date(date.getFullYear(), date.getMonth(), day));
   }
 
-  const enDays = { Lun: 'Mon', Mar: 'Tue', Mie: 'Wed', Jue: 'Thu', Vie: 'Fri', Sab: 'Sat', Dom: 'Sun' };
-
   return (
     <div className="calendar">
       <div className="calendar-header">
         {DAY_LABELS.map((label) => (
-          <span key={label}>{t(label, enDays[label])}</span>
+          <span key={label}>{t(label, EN_DAYS[label])}</span>
         ))}
       </div>
       <div className="calendar-grid">
@@ -1794,6 +1816,7 @@ function ScheduleGrid({ horarios, materias }) {
 
 function TaskDetail({ task, onCompleteTask }) {
   const t = useTranslation();
+  const lang = useContext(LanguageContext);
   const status = buildTaskStatus(task);
 
   return (
@@ -1803,7 +1826,7 @@ function TaskDetail({ task, onCompleteTask }) {
         <span className={`chip ${status.tone}`}>{t(status.label, status.label === 'Completada' ? 'Completed' : status.label === 'Pendiente' ? 'Pending' : 'Overdue')}</span>
       </div>
       <p className="muted">
-        {t('Entrega:', 'Due:')} {formatDate(task.fecha_entrega)}
+        {t('Entrega:', 'Due:')} {formatDate(task.fecha_entrega, lang)}
         {task.hora_entrega ? ` · ${formatTime(task.hora_entrega)}` : ''}
       </p>
       <p>{task.descripcion || t('Sin descripción agregada.', 'No description added.')}</p>

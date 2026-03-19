@@ -38,7 +38,10 @@ async function startServer() {
         await pool.query(sql);
         
         // Auto-migraciones para columnas nuevas en tablas existentes
+        await pool.query('ALTER TABLE periodos ADD COLUMN IF NOT EXISTS color VARCHAR(7);');
         await pool.query('ALTER TABLE materias ADD COLUMN IF NOT EXISTS color VARCHAR(7);');
+        await pool.query('ALTER TABLE horarios ADD COLUMN IF NOT EXISTS color VARCHAR(7);');
+        await pool.query('ALTER TABLE tareas ADD COLUMN IF NOT EXISTS color VARCHAR(7);');
         
         console.log('✅ Base de datos verificada/inicializada y migrada.');
       }
