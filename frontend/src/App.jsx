@@ -1,5 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, createContext, useContext } from 'react';
 
+export const LanguageContext = createContext('es');
+
+export function useTranslation() {
+  const lang = useContext(LanguageContext);
+  return function t(esStr, enStr) {
+    return lang === 'en' ? (enStr || esStr) : esStr;
+  };
+}
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '811564986134-8rgc04t2r94tcrulo4gm167cr2u32s07.apps.googleusercontent.com';
 const DAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
@@ -107,11 +115,11 @@ const request = async (path, { method = 'GET', body, token } = {}) => {
 const emptyNotice = { type: '', message: '' };
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Resumen', icon: '📊' },
-  { id: 'periodos', label: 'Periodos', icon: '🗓️' },
-  { id: 'materias', label: 'Materias', icon: '📚' },
-  { id: 'tareas', label: 'Tareas', icon: '📝' },
-  { id: 'horarios', label: 'Horario', icon: '⏰' }
+  { id: 'dashboard', labelEs: 'Resumen', labelEn: 'Overview', icon: '📊' },
+  { id: 'periodos', labelEs: 'Periodos', labelEn: 'Terms', icon: '🗓️' },
+  { id: 'materias', labelEs: 'Materias', labelEn: 'Subjects', icon: '📚' },
+  { id: 'tareas', labelEs: 'Tareas', labelEn: 'Tasks', icon: '📝' },
+  { id: 'horarios', labelEs: 'Horario', labelEn: 'Schedule', icon: '⏰' }
 ];
 
 const buildTaskStatus = (task) => {
@@ -221,7 +229,12 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('te_theme') || 'dark');
+  const [language, setLanguage] = useState(() => localStorage.getItem('te_lang') || 'es');
   const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('te_lang', language);
+  }, [language]);
 
   useEffect(() => {
     const handler = (event) => {
@@ -588,25 +601,28 @@ export default function App() {
 
   if (!token) {
     return (
-      <div className="app auth">
-        <AuthPanel
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-          onGoogleLogin={handleGoogleLogin}
-          onForgotPassword={handleForgotPassword}
-          onResetPassword={handleResetPassword}
-          resetToken={resetToken}
-          setResetToken={setResetToken}
-          loading={isLoading}
-          notice={notice}
-          theme={theme}
-          setTheme={setTheme}
-        />
-      </div>
+      <LanguageContext.Provider value={language}>
+        <div className="app auth">
+          <AuthPanel
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            onGoogleLogin={handleGoogleLogin}
+            onForgotPassword={handleForgotPassword}
+            onResetPassword={handleResetPassword}
+            resetToken={resetToken}
+            setResetToken={setResetToken}
+            loading={isLoading}
+            notice={notice}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        </div>
+      </LanguageContext.Provider>
     );
   }
 
   return (
+    <LanguageContext.Provider value={language}>
     <div className="app">
       <div className="shell">
         <aside className="sidebar">
@@ -630,13 +646,13 @@ export default function App() {
                 onClick={() => setView(item.id)}
               >
                 <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
+                <span className="nav-label">{language === 'en' ? item.labelEn : item.labelEs}</span>
               </button>
             ))}
           </nav>
-          <button type="button" className="nav-button ghost" onClick={() => handleLogout('Sesión cerrada.')}
+          <button type="button" className="nav-button ghost" onClick={() => handleLogout(language === 'en' ? 'Logged out.' : 'Sesión cerrada.')}
           >
-            Cerrar sesión
+            {language === 'en' ? 'Log out' : 'Cerrar sesión'}
           </button>
           
           {!window.matchMedia('(display-mode: standalone)').matches && (
@@ -693,13 +709,22 @@ export default function App() {
                   </div>
                 </div>
               </button>
+              <button
+                type="button"
+                className="theme-toggle"
+                onClick={() => setLanguage(language === 'es' ? 'en' : 'es')}
+                title={language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+                style={{ marginLeft: '8px', background: 'transparent', border: '1px solid var(--stroke)', borderRadius: '12px', color: 'var(--ink)' }}
+              >
+                {language === 'es' ? 'EN' : 'ES'}
+              </button>
               <label>
-                Periodo actual
+                {language === 'en' ? 'Current section' : 'Periodo actual'}
                 <select
                   value={activePeriodoId || ''}
                   onChange={(event) => setActivePeriodoId(event.target.value ? Number(event.target.value) : null)}
                 >
-                  <option value="">Todos los periodos</option>
+                  <option value="">{language === 'en' ? 'All terms' : 'Todos los periodos'}</option>
                   {periodos.map((periodo) => (
                     <option key={periodo.id_periodo} value={periodo.id_periodo}>
                       {periodo.nombre}
@@ -775,6 +800,7 @@ export default function App() {
         </main>
       </div>
     </div>
+    </LanguageContext.Provider>
   );
 }
 
@@ -782,6 +808,7 @@ function AuthPanel({
   onLogin, onRegister, onGoogleLogin, onForgotPassword, onResetPassword,
   resetToken, setResetToken, loading, notice, theme, setTheme
 }) {
+  const t = useTranslation();
   const [mode, setMode] = useState(resetToken ? 'reset' : 'login');
   const [form, setForm] = useState({ nombre: '', correo: '', password: '', confirmPassword: '' });
 
@@ -840,13 +867,13 @@ function AuthPanel({
             <Logo size={64} />
           </div>
           <h1>
-            {mode === 'login' && 'Tareas Escolares'}
-            {mode === 'register' && 'Crear Cuenta'}
-            {mode === 'forgot' && 'Recuperar Cuenta'}
-            {mode === 'reset' && 'Nueva Contraseña'}
+            {mode === 'login' && t('Tareas Escolares', 'School Tasks')}
+            {mode === 'register' && t('Crear Cuenta', 'Create Account')}
+            {mode === 'forgot' && t('Recuperar Cuenta', 'Recover Account')}
+            {mode === 'reset' && t('Nueva Contraseña', 'New Password')}
           </h1>
           <p className="auth-subtitle">
-            {mode === 'forgot' ? 'Te enviaremos un enlace a tu correo.' : 'Organiza todo lo importante.'}
+            {mode === 'forgot' ? t('Te enviaremos un enlace a tu correo.', 'We will send a link to your email.') : t('Organiza todo lo importante.', 'Organize everything important.')}
           </p>
         </div>
 
@@ -856,7 +883,7 @@ function AuthPanel({
               <div id="google-btn"></div>
             </div>
             <div className="auth-divider">
-              <span>o</span>
+              <span>{t('o', 'or')}</span>
             </div>
           </>
         )}
@@ -871,7 +898,7 @@ function AuthPanel({
           {mode === 'register' && (
             <input
               type="text"
-              placeholder="Nombre completo"
+              placeholder={t('Nombre completo', 'Full name')}
               value={form.nombre}
               onChange={(event) => setForm({ ...form, nombre: event.target.value })}
               required
@@ -881,7 +908,7 @@ function AuthPanel({
           {(mode !== 'reset') && (
             <input
               type="email"
-              placeholder="Correo electrónico"
+              placeholder={t('Correo electrónico', 'Email address')}
               value={form.correo}
               onChange={(event) => setForm({ ...form, correo: event.target.value })}
               required
@@ -891,7 +918,7 @@ function AuthPanel({
           {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <input
               type="password"
-              placeholder={mode === 'reset' ? 'Nueva contraseña' : 'Contraseña'}
+              placeholder={mode === 'reset' ? t('Nueva contraseña', 'New password') : t('Contraseña', 'Password')}
               value={form.password}
               onChange={(event) => setForm({ ...form, password: event.target.value })}
               required
@@ -901,7 +928,7 @@ function AuthPanel({
           {mode === 'reset' && (
             <input
               type="password"
-              placeholder="Confirmar contraseña"
+              placeholder={t('Confirmar contraseña', 'Confirm password')}
               value={form.confirmPassword}
               onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
               required
@@ -909,32 +936,32 @@ function AuthPanel({
           )}
 
           <button type="submit" className="button-evernote-primary" disabled={loading}>
-            {loading ? 'Procesando…' :
-              mode === 'login' ? 'Iniciar sesión' :
-              mode === 'register' ? 'Crear cuenta' :
-              mode === 'forgot' ? 'Enviar enlace' : 'Actualizar contraseña'}
+            {loading ? t('Procesando…', 'Processing...') :
+              mode === 'login' ? t('Iniciar sesión', 'Log in') :
+              mode === 'register' ? t('Crear cuenta', 'Sign up') :
+              mode === 'forgot' ? t('Enviar enlace', 'Send link') : t('Actualizar contraseña', 'Update password')}
           </button>
         </form>
 
         <div className="auth-footer">
           {mode === 'login' && (
             <>
-              <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot'); }}>¿Olvidaste tu contraseña?</a>
-              <p>¿No tienes una cuenta?</p>
+              <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot'); }}>{t('¿Olvidaste tu contraseña?', 'Forgot your password?')}</a>
+              <p>{t('¿No tienes una cuenta?', "Don't have an account?")}</p>
               <button type="button" className="link-button" onClick={() => setMode('register')}>
-                Crear cuenta
+                {t('Crear cuenta', 'Sign up')}
               </button>
             </>
           )}
           {(mode === 'register' || mode === 'forgot' || mode === 'reset') && (
             <>
-              <p>{mode === 'register' ? '¿Ya tienes una cuenta?' : '¿Recordaste tu contraseña?'}</p>
+              <p>{mode === 'register' ? t('¿Ya tienes una cuenta?', 'Already have an account?') : t('¿Recordaste tu contraseña?', 'Remembered your password?')}</p>
               <button type="button" className="link-button" onClick={() => {
                 setMode('login');
                 setResetToken('');
                 window.history.replaceState({}, document.title, window.location.pathname);
               }}>
-                Iniciar sesión
+                {t('Iniciar sesión', 'Log in')}
               </button>
             </>
           )}
