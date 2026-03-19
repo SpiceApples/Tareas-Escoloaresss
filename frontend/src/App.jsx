@@ -23,15 +23,16 @@ const MATERIA_COLORS = [
   '#84cc16'
 ];
 
-const dateFormatter = new Intl.DateTimeFormat('es-MX', {
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit'
-});
-const monthFormatter = new Intl.DateTimeFormat('es-MX', {
-  year: 'numeric',
-  month: 'long'
-});
+const getLang = () => localStorage.getItem('school_lang') || 'es';
+
+const formatMonth = (value) => {
+  if (!value) return '';
+  const lang = getLang();
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', {
+    year: 'numeric',
+    month: 'long'
+  }).format(value);
+};
 
 const normalizeDate = (value) => {
   if (!value) return null;
@@ -43,8 +44,13 @@ const normalizeDate = (value) => {
 
 const formatDate = (value) => {
   const parsed = normalizeDate(value);
-  if (!parsed) return 'Sin fecha';
-  return dateFormatter.format(parsed);
+  const lang = getLang();
+  if (!parsed) return lang === 'en' ? 'No date' : 'Sin fecha';
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit'
+  }).format(parsed);
 };
 
 const formatTime = (value) => {
@@ -119,7 +125,7 @@ const NAV_ITEMS = [
   { id: 'periodos', labelEs: 'Periodos', labelEn: 'Terms', icon: '🗓️' },
   { id: 'materias', labelEs: 'Materias', labelEn: 'Subjects', icon: '📚' },
   { id: 'tareas', labelEs: 'Tareas', labelEn: 'Tasks', icon: '📝' },
-  { id: 'horarios', labelEs: 'Horario', labelEn: 'Schedule', icon: '⏰' }
+  { id: 'horarios', labelEs: 'Calendario', labelEn: 'Calendar', icon: '⏰' }
 ];
 
 const buildTaskStatus = (task) => {
@@ -991,7 +997,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
         <SummaryCard title={t("Completadas", "Completed")} value={tareasStats.completadas} tone="success" />
         <SummaryCard title={t("Vencidas", "Overdue")} value={tareasStats.vencidas} tone="danger" />
         <SummaryCard title={t("Materias", "Subjects")} value={materias.length} />
-        <SummaryCard title={t("Bloques de horario", "Time blocks")} value={horarios.length} />
+        <SummaryCard title={t("Calendario", "Calendar")} value={horarios.length} />
       </div>
 
       <div className="dashboard-grid">
@@ -1009,7 +1015,7 @@ function Dashboard({ tareas, materias, horarios, tareasStats, onSelectTask, sele
               }}>
                 {t('Anterior', 'Prev')}
               </button>
-              <span>{monthFormatter.format(calendarDate)}</span>
+              <span>{formatMonth(calendarDate)}</span>
               <button type="button" className="button ghost" onClick={() => {
                 const copy = new Date(calendarDate);
                 copy.setMonth(copy.getMonth() + 1);
