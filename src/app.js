@@ -21,20 +21,25 @@ app.use((req, res, next) => {
   next();
 });
 
-// Diagnostic
-app.get('/api/health', (req, res) => res.json({ 
+// Rutas
+const router = express.Router();
+
+router.get('/health', (req, res) => res.json({ 
   status: 'ok', 
   time: new Date(),
   node_env: process.env.NODE_ENV,
   db_connected: !!pool
 }));
 
-// Rutas
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/periodos', require('./routes/periodos.routes'));
-app.use('/api/materias', require('./routes/materias.routes'));
-app.use('/api/horarios', require('./routes/horarios.routes'));
-app.use('/api/tareas', require('./routes/tareas.routes'));
+router.use('/auth', require('./routes/auth.routes'));
+router.use('/periodos', require('./routes/periodos.routes'));
+router.use('/materias', require('./routes/materias.routes'));
+router.use('/horarios', require('./routes/horarios.routes'));
+router.use('/tareas', require('./routes/tareas.routes'));
+
+// Montar el router en ambas posibilidades
+app.use('/api', router);
+app.use('/', router);
 
 const PORT = process.env.PORT || 3000;
 
