@@ -8,9 +8,7 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "config": { "distDir": "dist" }
     }
   ],
   "rewrites": [
@@ -19,7 +17,7 @@
       "destination": "src/app.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "frontend/$1"
     }
   ]
