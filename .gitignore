@@ -1,8 +1,6 @@
 node_modules/
-dist/
 .env
-.DS_Store
+.npm-cache/
+vercel-mobile-fix/
+dist/
 *.log
-frontend/node_modules/
-frontend/dist/
-frontend/.env

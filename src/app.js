@@ -57,4 +57,9 @@ async function startServer() {
   }
 }
 
-startServer();
+// Solo iniciar el servidor si se ejecuta directamente (no en Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  startServer();
+}
+
+module.exports = app;

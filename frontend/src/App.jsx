@@ -440,6 +440,20 @@ export default function App() {
     }
   };
 
+  const handleTestLogin = () => {
+    const mockUser = {
+      id: 999,
+      nombre: 'Test Alumno',
+      correo: 'test@example.com'
+    };
+    const mockToken = 'mock-jwt-token-for-testing';
+    setToken(mockToken);
+    setUser(mockUser);
+    localStorage.setItem('te_token', mockToken);
+    localStorage.setItem('te_user', JSON.stringify(mockUser));
+    showNotice('success', t('Modo de prueba activado.', 'Test mode activated.'));
+  };
+
   const handleForgotPassword = async (correo) => {
     setIsLoading(true);
     try {
@@ -630,6 +644,7 @@ export default function App() {
             onLogin={handleLogin}
             onRegister={handleRegister}
             onGoogleLogin={handleGoogleLogin}
+            onTestLogin={handleTestLogin}
             onForgotPassword={handleForgotPassword}
             onResetPassword={handleResetPassword}
             resetToken={resetToken}
@@ -830,7 +845,7 @@ export default function App() {
 }
 
 function AuthPanel({
-  onLogin, onRegister, onGoogleLogin, onForgotPassword, onResetPassword,
+  onLogin, onRegister, onGoogleLogin, onTestLogin, onForgotPassword, onResetPassword,
   resetToken, setResetToken, loading, notice, theme, setTheme
 }) {
   const t = useTranslation();
@@ -968,6 +983,17 @@ function AuthPanel({
               mode === 'register' ? t('Crear cuenta', 'Sign up') :
               mode === 'forgot' ? t('Enviar enlace', 'Send link') : t('Actualizar contraseña', 'Update password')}
           </button>
+
+          {mode === 'login' && (
+            <button 
+              type="button" 
+              className="button-evernote-ghost" 
+              style={{ marginTop: '12px', border: '1px dashed var(--ink-light)', opacity: 0.8 }}
+              onClick={onTestLogin}
+            >
+              {t('🚀 Probar sin cuenta (Invitado)', '🚀 Test without account (Guest)')}
+            </button>
+          )}
         </form>
 
         <div className="auth-footer">
