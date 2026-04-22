@@ -8,7 +8,7 @@ export function useTranslation() {
     return lang === 'en' ? (enStr || esStr) : esStr;
   };
 }
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '811564986134-8rgc04t2r94tcrulo4gm167cr2u32s07.apps.googleusercontent.com';
 const DAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 const SCHOOL_DAYS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie'];
